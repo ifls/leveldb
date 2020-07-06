@@ -3,6 +3,7 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include <cstdio>
+#include <iostream>
 
 #include "leveldb/dumpfile.h"
 #include "leveldb/env.h"
@@ -46,6 +47,7 @@ static void Usage() {
 }
 
 int main(int argc, char** argv) {
+  std::cout << "ee" << std::endl;
   leveldb::Env* env = leveldb::Env::Default();
   bool ok = true;
   if (argc < 2) {
