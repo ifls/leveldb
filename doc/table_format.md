@@ -9,9 +9,9 @@ leveldb File format
     [meta block 1]
     ...
     [meta block K]
-    [metaindex block]
-    [index block]
-    [Footer]        (fixed size; starts at file_size - sizeof(Footer))
+    [metaindex block]  -> mete block
+    [index block]  -> data block
+    [Footer]        (fixed size; 定长 starts at file_size - sizeof(Footer))
     <end_of_file>
 
 The file contains internal pointers.  Each such pointer is called
@@ -23,16 +23,14 @@ a BlockHandle and contains the following information:
 See [varints](https://developers.google.com/protocol-buffers/docs/encoding#varints)
 for an explanation of varint64 format.
 
-1.  The sequence of key/value pairs in the file are stored in sorted
-order and partitioned into a sequence of data blocks.  These blocks
-come one after another at the beginning of the file.  Each data block
-is formatted according to the code in `block_builder.cc`, and then
-optionally compressed.
+1.  The sequence of key/value pairs in the file are stored in sorted order and partitioned into a sequence of data blocks.  
+These blocks come one after another at the beginning of the file.  
+Each data block is formatted according to the code in `block_builder.cc`, and then optionally compressed.
 
-2. After the data blocks we store a bunch of meta blocks.  The
-supported meta block types are described below.  More meta block types
-may be added in the future.  Each meta block is again formatted using
-`block_builder.cc` and then optionally compressed.
+2. After the data blocks we store a bunch of meta blocks.  
+The supported meta block types are described below.  
+More meta block types may be added in the future.  
+Each meta block is again formatted using `block_builder.cc` and then optionally compressed.
 
 3. A "metaindex" block.  It contains one entry for every other meta
 block where the key is the name of the meta block and the value is a
@@ -46,17 +44,16 @@ BlockHandle for the data block.
 5. At the very end of the file is a fixed length footer that contains
 the BlockHandle of the metaindex and index blocks as well as a magic number.
 
-        metaindex_handle: char[p];     // Block handle for metaindex
-        index_handle:     char[q];     // Block handle for index
+        metaindex_handle: char[p];     // Block handle地址 for metaindex (block)
+        index_handle:     char[q];     // Block handle地址 for index (block)
         padding:          char[40-p-q];// zeroed bytes to make fixed length
                                        // (40==2*BlockHandle::kMaxEncodedLength)
-        magic:            fixed64;     // == 0xdb4775248b80fb57 (little-endian)
+        magic:            fixed64;     // == 0xdb4775248b80fb57 (little-endian) 8B
 
 ## "filter" Meta Block
-
-If a `FilterPolicy` was specified when the database was opened, a
-filter block is stored in each table.  The "metaindex" block contains
-an entry that maps from `filter.<N>` to the BlockHandle for the filter
+ 开启bloom 过滤器，才有的
+If a `FilterPolicy` was specified when the database was opened, a filter block is stored in each table.  
+The "metaindex" block contains an entry that maps from `filter.<N>` to the BlockHandle for the filter
 block where `<N>` is the string returned by the filter policy's
 `Name()` method.
 

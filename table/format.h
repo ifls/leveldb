@@ -23,7 +23,7 @@ struct ReadOptions;
 class BlockHandle {
  public:
   // Maximum encoding length of a BlockHandle
-  enum { kMaxEncodedLength = 10 + 10 };
+  enum { kMaxEncodedLength = 10 + 10 };  //块句柄的最长size
 
   BlockHandle();
 
@@ -73,9 +73,10 @@ class Footer {
 // kTableMagicNumber was picked by running
 //    echo http://code.google.com/p/leveldb/ | sha1sum
 // and taking the leading 64 bits.
+// sst 魔树 ull
 static const uint64_t kTableMagicNumber = 0xdb4775248b80fb57ull;
 
-// 1-byte type + 32-bit crc
+// 1-byte type + 32-bit crc  5B  用于数据块的尾部
 static const size_t kBlockTrailerSize = 5;
 
 struct BlockContents {

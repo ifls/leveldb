@@ -28,11 +28,14 @@ Status BlockHandle::DecodeFrom(Slice* input) {
   }
 }
 
+// 生成sst的 footer， 写到sst文件里
 void Footer::EncodeTo(std::string* dst) const {
   const size_t original_size = dst->size();
-  metaindex_handle_.EncodeTo(dst);
-  index_handle_.EncodeTo(dst);
-  dst->resize(2 * BlockHandle::kMaxEncodedLength);  // Padding
+  metaindex_handle_.EncodeTo(dst);  //元数据索引地址
+  index_handle_.EncodeTo(dst);      //索引地址
+  dst->resize(
+      2 *
+      BlockHandle::kMaxEncodedLength);  // 前进40B，多出的地方都是0x00 Padding
   PutFixed32(dst, static_cast<uint32_t>(kTableMagicNumber & 0xffffffffu));
   PutFixed32(dst, static_cast<uint32_t>(kTableMagicNumber >> 32));
   assert(dst->size() == original_size + kEncodedLength);

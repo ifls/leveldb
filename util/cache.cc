@@ -148,6 +148,7 @@ class HandleTable {
 };
 
 // A single shard of sharded cache.
+// lru 缓存
 class LRUCache {
  public:
   LRUCache();

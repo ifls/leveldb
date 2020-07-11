@@ -884,6 +884,7 @@ Status DBImpl::InstallCompactionResults(CompactionState* compact) {
   return versions_->LogAndApply(compact->compaction->edit(), &mutex_);
 }
 
+//后台压缩
 Status DBImpl::DoCompactionWork(CompactionState* compact) {
   const uint64_t start_micros = env_->NowMicros();
   int64_t imm_micros = 0;  // Micros spent doing imm_ compactions

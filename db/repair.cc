@@ -291,6 +291,7 @@ class Repairer {
     }
   }
 
+  //恢复sst
   void RepairTable(const std::string& src, TableInfo t) {
     // We will copy src contents to a new table and then rename the
     // new table over the source.

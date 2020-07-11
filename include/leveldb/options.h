@@ -25,8 +25,8 @@ class Snapshot;
 enum CompressionType {
   // NOTE: do not change the values of existing entries, as these are
   // part of the persistent format on disk.
-  kNoCompression = 0x0,
-  kSnappyCompression = 0x1
+  kNoCompression = 0x0,     //不压缩
+  kSnappyCompression = 0x1  // snappy 压缩
 };
 
 // Options to control the behavior of a database (passed to DB::Open)
@@ -97,7 +97,7 @@ struct LEVELDB_EXPORT Options {
   // block size specified here corresponds to uncompressed data.  The
   // actual size of the unit read from disk may be smaller if
   // compression is enabled.  This parameter can be changed dynamically.
-  size_t block_size = 4 * 1024;
+  size_t block_size = 4 * 1024;  //一个 sst data block 是 4KB
 
   // Number of keys between restart points for delta encoding of keys.
   // This parameter can be changed dynamically.  Most clients should

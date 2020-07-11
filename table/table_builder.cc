@@ -91,6 +91,7 @@ Status TableBuilder::ChangeOptions(const Options& options) {
   return Status::OK();
 }
 
+// 加一个kv 如果如果可以写满一个data block 就即时写入一块
 void TableBuilder::Add(const Slice& key, const Slice& value) {
   Rep* r = rep_;
   assert(!r->closed);
@@ -128,6 +129,7 @@ void TableBuilder::Flush() {
   if (!ok()) return;
   if (r->data_block.empty()) return;
   assert(!r->pending_index_entry);
+  //写入数据块
   WriteBlock(&r->data_block, &r->pending_handle);
   if (ok()) {
     r->pending_index_entry = true;
@@ -140,9 +142,10 @@ void TableBuilder::Flush() {
 
 void TableBuilder::WriteBlock(BlockBuilder* block, BlockHandle* handle) {
   // File format contains a sequence of blocks where each block has:
-  //    block_data: uint8[n]
-  //    type: uint8
-  //    crc: uint32
+  // 每一个数据块的格式
+  //    block_data: uint8[n]  // []byte
+  //    type: uint8  // 压缩类型
+  //    crc: uint32  //4B crc check sum
   assert(ok());
   Rep* r = rep_;
   Slice raw = block->Finish();
@@ -174,6 +177,7 @@ void TableBuilder::WriteBlock(BlockBuilder* block, BlockHandle* handle) {
   block->Reset();
 }
 
+// 写一块 data block 到 sst
 void TableBuilder::WriteRawBlock(const Slice& block_contents,
                                  CompressionType type, BlockHandle* handle) {
   Rep* r = rep_;
@@ -182,9 +186,11 @@ void TableBuilder::WriteRawBlock(const Slice& block_contents,
   r->status = r->file->Append(block_contents);
   if (r->status.ok()) {
     char trailer[kBlockTrailerSize];
-    trailer[0] = type;
-    uint32_t crc = crc32c::Value(block_contents.data(), block_contents.size());
-    crc = crc32c::Extend(crc, trailer, 1);  // Extend crc to cover block type
+    trailer[0] = type;  //类型
+    uint32_t crc = crc32c::Value(block_contents.data(),
+                                 block_contents.size());  //对数据做crc校验和
+    crc = crc32c::Extend(crc, trailer,
+                         1);  // Extend crc to cover block type 对类型追加校验和
     EncodeFixed32(trailer + 1, crc32c::Mask(crc));
     r->status = r->file->Append(Slice(trailer, kBlockTrailerSize));
     if (r->status.ok()) {

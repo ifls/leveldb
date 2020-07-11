@@ -19,6 +19,7 @@ namespace leveldb {
 
 class Env;
 
+// 缓存 sst文件里的 数据库索引
 class TableCache {
  public:
   TableCache(const std::string& dbname, const Options& options, int entries);

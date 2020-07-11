@@ -38,6 +38,7 @@ namespace leveldb {
 
 class Arena;
 
+// 跳表 memtable的实际实现
 template <typename Key, class Comparator>
 class SkipList {
  private:
@@ -99,7 +100,7 @@ class SkipList {
   };
 
  private:
-  enum { kMaxHeight = 12 };
+  enum { kMaxHeight = 12 };  //跳表的最高层级
 
   inline int GetMaxHeight() const {
     return max_height_.load(std::memory_order_relaxed);
@@ -175,7 +176,7 @@ struct SkipList<Key, Comparator>::Node {
 
  private:
   // Array of length equal to the node height.  next_[0] is lowest level link.
-  std::atomic<Node*> next_[1];
+  std::atomic<Node*> next_[1];  // next_[0] 最底层连接
 };
 
 template <typename Key, class Comparator>
@@ -263,14 +264,17 @@ SkipList<Key, Comparator>::FindGreaterOrEqual(const Key& key,
                                               Node** prev) const {
   Node* x = head_;
   int level = GetMaxHeight() - 1;
+  //从高到低往下跳, 寻找每一层的prev节点，
   while (true) {
     Node* next = x->Next(level);
+    //往右走
     if (KeyIsAfterNode(key, next)) {
       // Keep searching in this list
-      x = next;
+      x = next;  // 追踪前指针
     } else {
-      if (prev != nullptr) prev[level] = x;
-      if (level == 0) {
+      //往下走
+      if (prev != nullptr) prev[level] = x;  //保存前指针
+      if (level == 0) {                      //最底层，返回
         return next;
       } else {
         // Switch to next list
@@ -345,6 +349,7 @@ void SkipList<Key, Comparator>::Insert(const Key& key) {
 
   int height = RandomHeight();
   if (height > GetMaxHeight()) {
+    // 补上高层缺失的prev节点
     for (int i = GetMaxHeight(); i < height; i++) {
       prev[i] = head_;
     }
@@ -359,6 +364,7 @@ void SkipList<Key, Comparator>::Insert(const Key& key) {
   }
 
   x = NewNode(key, height);
+  //从低到高，插入进去
   for (int i = 0; i < height; i++) {
     // NoBarrier_SetNext() suffices since we will add a barrier when
     // we publish a pointer to "x" in prev[i].
@@ -370,11 +376,7 @@ void SkipList<Key, Comparator>::Insert(const Key& key) {
 template <typename Key, class Comparator>
 bool SkipList<Key, Comparator>::Contains(const Key& key) const {
   Node* x = FindGreaterOrEqual(key, nullptr);
-  if (x != nullptr && Equal(key, x->key)) {
-    return true;
-  } else {
-    return false;
-  }
+  return x != nullptr && Equal(key, x->key);
 }
 
 }  // namespace leveldb
