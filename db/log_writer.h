@@ -34,13 +34,15 @@ class Writer {
 
   ~Writer();
 
+  // 就两个函数， 一个公有函数
   Status AddRecord(const Slice& slice);
 
  private:
+  //内部函数
   Status EmitPhysicalRecord(RecordType type, const char* ptr, size_t length);
 
   WritableFile* dest_;
-  int block_offset_;  // Current offset in block
+  int block_offset_;  // 当前块中的偏移 Current offset in block
 
   // crc32c values for all supported record types.  These are
   // pre-computed to reduce the overhead of computing the crc of the

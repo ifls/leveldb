@@ -7,6 +7,7 @@
 #include <cstdio>
 
 #include "leveldb/env.h"
+
 #include "util/coding.h"
 #include "util/crc32c.h"
 
@@ -53,6 +54,7 @@ bool Reader::SkipToInitialBlock() {
   return true;
 }
 
+//读取记录到record, scratch是存放记录多个部分的临时空间
 bool Reader::ReadRecord(Slice* record, std::string* scratch) {
   if (last_record_offset_ < initial_offset_) {
     if (!SkipToInitialBlock()) {
@@ -84,6 +86,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch) {
         resyncing_ = false;
         continue;
       } else {
+        // kFirstType 置为false？
         resyncing_ = false;
       }
     }
@@ -101,7 +104,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch) {
         }
         prospective_record_offset = physical_record_offset;
         scratch->clear();
-        *record = fragment;
+        *record = fragment;  //读出完整的一段
         last_record_offset_ = prospective_record_offset;
         return true;
 
@@ -116,6 +119,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch) {
           }
         }
         prospective_record_offset = physical_record_offset;
+        //临时保存到草稿
         scratch->assign(fragment.data(), fragment.size());
         in_fragmented_record = true;
         break;
@@ -125,6 +129,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch) {
           ReportCorruption(fragment.size(),
                            "missing start of fragmented record(1)");
         } else {
+          //保存到草稿
           scratch->append(fragment.data(), fragment.size());
         }
         break;
@@ -135,7 +140,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch) {
                            "missing start of fragmented record(2)");
         } else {
           scratch->append(fragment.data(), fragment.size());
-          *record = Slice(*scratch);
+          *record = Slice(*scratch);  //多块拼接的记录
           last_record_offset_ = prospective_record_offset;
           return true;
         }
@@ -161,6 +166,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch) {
       default: {
         char buf[40];
         std::snprintf(buf, sizeof(buf), "unknown record type %u", record_type);
+        //报告数据损坏
         ReportCorruption(
             (fragment.size() + (in_fragmented_record ? scratch->size() : 0)),
             buf);

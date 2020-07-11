@@ -55,7 +55,7 @@ constexpr const int kOpenBaseFlags = O_CLOEXEC;
 constexpr const int kOpenBaseFlags = 0;
 #endif  // defined(HAVE_O_CLOEXEC)
 
-constexpr const size_t kWritableFileBufferSize = 65536;
+constexpr const size_t kWritableFileBufferSize = 65536;  //64K
 
 Status PosixError(const std::string& context, int error_number) {
   if (error_number == ENOENT) {
@@ -246,6 +246,7 @@ class PosixMmapReadableFile final : public RandomAccessFile {
   const std::string filename_;
 };
 
+// 日志具体实现类代码
 class PosixWritableFile final : public WritableFile {
  public:
   PosixWritableFile(std::string filename, int fd)
@@ -272,10 +273,11 @@ class PosixWritableFile final : public WritableFile {
     write_data += copy_size;
     write_size -= copy_size;
     pos_ += copy_size;
-    if (write_size == 0) {
+    if (write_size == 0) {  //写完了
       return Status::OK();
     }
 
+    //还需要再写， 所以刷新缓冲区
     // Can't fit in buffer, so need to do at least one write.
     Status status = FlushBuffer();
     if (!status.ok()) {
@@ -283,6 +285,7 @@ class PosixWritableFile final : public WritableFile {
     }
 
     // Small writes go to buffer, large writes are written directly.
+    // 数据少，再写到缓冲区，等待下一次刷到硬盘文件
     if (write_size < kWritableFileBufferSize) {
       std::memcpy(buf_, write_data, write_size);
       pos_ = write_size;
@@ -293,7 +296,7 @@ class PosixWritableFile final : public WritableFile {
 
   Status Close() override {
     Status status = FlushBuffer();
-    const int close_result = ::close(fd_);
+    const int close_result = ::close(fd_);  //关闭文件
     if (close_result < 0 && status.ok()) {
       status = PosixError(filename_, errno);
     }
@@ -301,39 +304,47 @@ class PosixWritableFile final : public WritableFile {
     return status;
   }
 
+  //刷到系统内核
   Status Flush() override { return FlushBuffer(); }
 
+  //同步到磁盘上
   Status Sync() override {
     // Ensure new files referred to by the manifest are in the filesystem.
     //
     // This needs to happen before the manifest file is flushed to disk, to
     // avoid crashing in a state where the manifest refers to files that are not
     // yet on disk.
+    // 如果是manifest文件，需要同步目录
     Status status = SyncDirIfManifest();
     if (!status.ok()) {
       return status;
     }
 
+    //写入缓冲区
     status = FlushBuffer();
     if (!status.ok()) {
       return status;
     }
 
+    //刷入到磁盘上
     return SyncFd(fd_, filename_);
   }
 
  private:
   Status FlushBuffer() {
+    //写入buffer
     Status status = WriteUnbuffered(buf_, pos_);
     pos_ = 0;
     return status;
   }
 
+  // 写入buffer存不下的，死循环写到文件，写完or出错
   Status WriteUnbuffered(const char* data, size_t size) {
     while (size > 0) {
+      // unistd.h  //是定位seek到文件尾部的？
       ssize_t write_result = ::write(fd_, data, size);
-      if (write_result < 0) {
-        if (errno == EINTR) {
+      if (write_result < 0) {  // 负数标识出错
+        if (errno == EINTR) {  //检查 errno 全局错误
           continue;  // Retry
         }
         return PosixError(filename_, errno);
@@ -362,7 +373,7 @@ class PosixWritableFile final : public WritableFile {
 
   // Ensures that all the caches associated with the given file descriptor's
   // data are flushed all the way to durable media, and can withstand power
-  // failures.
+  // failures. 刷到持久化设备上
   //
   // The path argument is only used to populate the description string in the
   // returned Status if an error occurs.
@@ -429,7 +440,7 @@ class PosixWritableFile final : public WritableFile {
   // buf_[0, pos_ - 1] contains data to be written to fd_.
   char buf_[kWritableFileBufferSize];
   size_t pos_;
-  int fd_;
+  int fd_;   // 文件的文件描述符
 
   const bool is_manifest_;  // True if the file's name starts with MANIFEST.
   const std::string filename_;

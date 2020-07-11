@@ -24,8 +24,8 @@ class Reader {
    public:
     virtual ~Reporter();
 
-    // Some corruption was detected.  "size" is the approximate number
-    // of bytes dropped due to the corruption.
+    // Some corruption was detected.
+    // "size" is the approximate number of bytes dropped due to the corruption.
     virtual void Corruption(size_t bytes, const Status& status) = 0;
   };
 
@@ -85,10 +85,10 @@ class Reader {
   void ReportCorruption(uint64_t bytes, const char* reason);
   void ReportDrop(uint64_t bytes, const Status& reason);
 
-  SequentialFile* const file_;
-  Reporter* const reporter_;
-  bool const checksum_;
-  char* const backing_store_;
+  SequentialFile* const file_;  //目标日志文件
+  Reporter* const reporter_;  //错误报告类
+  bool const checksum_; //是要进行校验和
+  char* const backing_store_;  //缓冲
   Slice buffer_;
   bool eof_;  // Last Read() indicated EOF by returning < kBlockSize
 
@@ -98,7 +98,7 @@ class Reader {
   uint64_t end_of_buffer_offset_;
 
   // Offset at which to start looking for the first record to return
-  uint64_t const initial_offset_;
+  uint64_t const initial_offset_;  //初始偏移
 
   // True if we are resynchronizing after a seek (initial_offset_ > 0). In
   // particular, a run of kMiddleType and kLastType records can be silently
