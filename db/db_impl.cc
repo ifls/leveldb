@@ -1228,7 +1228,9 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
   Writer* last_writer = &w;
   if (status.ok() && updates != nullptr) {  // nullptr batch is for compactions
     WriteBatch* write_batch = BuildBatchGroup(&last_writer);
+    // 插入序号
     WriteBatchInternal::SetSequence(write_batch, last_sequence + 1);
+    // 更新序号， 加上条目数
     last_sequence += WriteBatchInternal::Count(write_batch);
 
     // Add to log and apply to memtable. 写入只需要两步 We can release the lock
@@ -1237,7 +1239,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
     // into mem_.
     {
       mutex_.Unlock();
-      // 2 追加日志
+      // 2 追加日志 将writeBatch 字符串 写到日志
       status = log_->AddRecord(WriteBatchInternal::Contents(write_batch));
       bool sync_error = false;
       if (status.ok() && options.sync) {
@@ -1261,6 +1263,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
     }
     if (write_batch == tmp_batch_) tmp_batch_->Clear();
 
+    //更新最终的序号
     versions_->SetLastSequence(last_sequence);
   }
 
