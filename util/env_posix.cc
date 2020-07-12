@@ -391,6 +391,7 @@ class PosixWritableFile final : public WritableFile {
 #if HAVE_FDATASYNC
     bool sync_success = ::fdatasync(fd) == 0;
 #else
+    // unistd.h  同步到磁盘
     bool sync_success = ::fsync(fd) == 0;
 #endif  // HAVE_FDATASYNC
 

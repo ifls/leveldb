@@ -172,7 +172,7 @@ class DBImpl : public DB {
   FileLock* db_lock_;
 
   // State below is protected by mutex_
-  port::Mutex mutex_;
+  port::Mutex mutex_;  // port 锁
   std::atomic<bool> shutting_down_;
   port::CondVar background_work_finished_signal_ GUARDED_BY(mutex_);
   MemTable* mem_;  //内存表
@@ -183,7 +183,7 @@ class DBImpl : public DB {
   log::Writer* log_;
   uint32_t seed_ GUARDED_BY(mutex_);  // For sampling.
 
-  // Queue of writers.
+  // Queue of writers. 输出队列
   std::deque<Writer*> writers_ GUARDED_BY(mutex_);
   WriteBatch* tmp_batch_ GUARDED_BY(mutex_);
 
@@ -198,7 +198,7 @@ class DBImpl : public DB {
 
   ManualCompaction* manual_compaction_ GUARDED_BY(mutex_);
 
-  VersionSet* const versions_ GUARDED_BY(mutex_);
+  VersionSet* const versions_ GUARDED_BY(mutex_);  //版本集
 
   // Have we encountered a background error in paranoid mode?
   Status bg_error_ GUARDED_BY(mutex_);

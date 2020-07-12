@@ -18,6 +18,7 @@ namespace leveldb {
 Comparator::~Comparator() = default;
 
 namespace {
+	// 默认的比较器
 class BytewiseComparatorImpl : public Comparator {
  public:
   BytewiseComparatorImpl() = default;

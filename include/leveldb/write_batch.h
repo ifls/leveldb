@@ -53,7 +53,7 @@ class LEVELDB_EXPORT WriteBatch {
   // If the database contains a mapping for "key", erase it.  Else do nothing.
   void Delete(const Slice& key);
 
-  // Clear all updates buffered in this batch.
+  // 删除所有 Clear all updates buffered in this batch.
   void Clear();
 
   // The size of the database changes caused by this batch.

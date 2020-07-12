@@ -84,10 +84,12 @@ Version::~Version() {
   }
 }
 
+// 二分搜索 1层 到 更多层的文件
 int FindFile(const InternalKeyComparator& icmp,
              const std::vector<FileMetaData*>& files, const Slice& key) {
   uint32_t left = 0;
   uint32_t right = files.size();
+  // 二分搜索
   while (left < right) {
     uint32_t mid = (left + right) / 2;
     const FileMetaData* f = files[mid];
@@ -278,20 +280,27 @@ static bool NewestFirst(FileMetaData* a, FileMetaData* b) {
   return a->number > b->number;
 }
 
+// 搜索sst table
 void Version::ForEachOverlapping(Slice user_key, Slice internal_key, void* arg,
                                  bool (*func)(void*, int, FileMetaData*)) {
   const Comparator* ucmp = vset_->icmp_.user_comparator();
 
   // Search level-0 in order from newest to oldest.
+  // 先搜索0层
   std::vector<FileMetaData*> tmp;
   tmp.reserve(files_[0].size());
+
+  //遍历0层所有文件
   for (uint32_t i = 0; i < files_[0].size(); i++) {
     FileMetaData* f = files_[0][i];
+    // min <= user_key <= max
     if (ucmp->Compare(user_key, f->smallest.user_key()) >= 0 &&
         ucmp->Compare(user_key, f->largest.user_key()) <= 0) {
       tmp.push_back(f);
     }
   }
+
+  // 0层
   if (!tmp.empty()) {
     std::sort(tmp.begin(), tmp.end(), NewestFirst);
     for (uint32_t i = 0; i < tmp.size(); i++) {
@@ -301,13 +310,14 @@ void Version::ForEachOverlapping(Slice user_key, Slice internal_key, void* arg,
     }
   }
 
-  // Search other levels.
+  // 搜索 1-n层 Search other levels.
   for (int level = 1; level < config::kNumLevels; level++) {
     size_t num_files = files_[level].size();
     if (num_files == 0) continue;
 
     // Binary search to find earliest index whose largest key >= internal_key.
     uint32_t index = FindFile(vset_->icmp_, files_[level], internal_key);
+    //在这一层找到了
     if (index < num_files) {
       FileMetaData* f = files_[level][index];
       if (ucmp->Compare(user_key, f->smallest.user_key()) < 0) {
@@ -399,6 +409,7 @@ Status Version::Get(const ReadOptions& options, const LookupKey& k,
   return state.found ? state.s : Status::NotFound(Slice());
 }
 
+// 被 查找到 一次， 如果 <= 0 就标记需要进行合并
 bool Version::UpdateStats(const GetStats& stats) {
   FileMetaData* f = stats.seek_file;
   if (f != nullptr) {
@@ -591,7 +602,7 @@ class VersionSet::Builder {
 
   VersionSet* vset_;
   Version* base_;
-  LevelState levels_[config::kNumLevels];
+  LevelState levels_[config::kNumLevels];  // 每一层的新增和删除文件
 
  public:
   // Initialize a builder with the files from *base and other info from *vset
@@ -626,6 +637,7 @@ class VersionSet::Builder {
   }
 
   // Apply all of the edits in *edit to the current state.
+  // 应用修改，记录 到level_数组中
   void Apply(VersionEdit* edit) {
     // Update compaction pointers
     for (size_t i = 0; i < edit->compact_pointers_.size(); i++) {
@@ -661,7 +673,7 @@ class VersionSet::Builder {
       // conservative and allow approximately one seek for every 16KB
       // of data before triggering a compaction.
       f->allowed_seeks = static_cast<int>((f->file_size / 16384U));
-      if (f->allowed_seeks < 100) f->allowed_seeks = 100;
+      if (f->allowed_seeks < 100) f->allowed_seeks = 100;  //重置allowed_seeks
 
       levels_[level].deleted_files.erase(f->number);
       levels_[level].added_files->insert(f);
@@ -669,6 +681,7 @@ class VersionSet::Builder {
   }
 
   // Save the current state in *v.
+  // 生成新的version
   void SaveTo(Version* v) {
     BySmallestKey cmp;
     cmp.internal_comparator = &vset_->icmp_;
@@ -757,6 +770,7 @@ VersionSet::~VersionSet() {
   delete descriptor_file_;
 }
 
+// 将version 插入到双向链表，
 void VersionSet::AppendVersion(Version* v) {
   // Make "v" current
   assert(v->refs_ == 0);
@@ -774,6 +788,7 @@ void VersionSet::AppendVersion(Version* v) {
   v->next_->prev_ = v;
 }
 
+// 添加日志，应用 version edit 并生成新version 加入到 version set
 Status VersionSet::LogAndApply(VersionEdit* edit, port::Mutex* mu) {
   if (edit->has_log_number_) {
     assert(edit->log_number_ >= log_number_);
@@ -789,12 +804,13 @@ Status VersionSet::LogAndApply(VersionEdit* edit, port::Mutex* mu) {
   edit->SetNextFile(next_file_number_);
   edit->SetLastSequence(last_sequence_);
 
-  Version* v = new Version(this);
+  Version* v = new Version(this);   // 新建version
   {
     Builder builder(this, current_);
-    builder.Apply(edit);
-    builder.SaveTo(v);
+    builder.Apply(edit);  //version + edit
+    builder.SaveTo(v);   // version = new_version
   }
+  // 计算下一次 major compact 要处理的层
   Finalize(v);
 
   // Initialize new descriptor log file if necessary by creating
@@ -818,12 +834,14 @@ Status VersionSet::LogAndApply(VersionEdit* edit, port::Mutex* mu) {
   {
     mu->Unlock();
 
-    // Write new record to MANIFEST log
+    // Write new record to MANIFEST log manifest文件记录 所有层级的sst以及带上了sst元数据
     if (s.ok()) {
       std::string record;
       edit->EncodeTo(&record);
+      //追加日志到manifest 日志
       s = descriptor_log_->AddRecord(record);
       if (s.ok()) {
+      	//必同步到磁盘
         s = descriptor_file_->Sync();
       }
       if (!s.ok()) {
@@ -1244,6 +1262,7 @@ Iterator* VersionSet::MakeInputIterator(Compaction* c) {
   return result;
 }
 
+// 挑选两个不同层级的 sst 合并
 Compaction* VersionSet::PickCompaction() {
   Compaction* c;
   int level;

@@ -21,7 +21,7 @@
 
 namespace leveldb {
 
-// 封装错误码和错误msg
+// 封装错误码和错误msg，兼容了ok和错误处理
 class LEVELDB_EXPORT Status {
  public:
   // Create a success status.

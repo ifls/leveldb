@@ -57,6 +57,8 @@ bool SomeFileOverlapsRange(const InternalKeyComparator& icmp,
                            const Slice* smallest_user_key,
                            const Slice* largest_user_key);
 
+// 记录数据库由磁盘上哪些文件构成，去掉旧的文件，
+// version + version edit == version+1
 class Version {
  public:
   // Lookup the value for key.  If found, store it in *val and
@@ -106,6 +108,7 @@ class Version {
 
   // Return the level at which we should place a new memtable compaction
   // result that covers the range [smallest_user_key,largest_user_key].
+  // 没看到 用的地方
   int PickLevelForMemTableOutput(const Slice& smallest_user_key,
                                  const Slice& largest_user_key);
 
@@ -145,13 +148,13 @@ class Version {
   void ForEachOverlapping(Slice user_key, Slice internal_key, void* arg,
                           bool (*func)(void*, int, FileMetaData*));
 
-  VersionSet* vset_;  // VersionSet to which this Version belongs
-  Version* next_;     // Next version in linked list
+  VersionSet* vset_;  // 所属的集合 VersionSet to which this Version belongs
+  Version* next_;     // 双向链表 Next version in linked list
   Version* prev_;     // Previous version in linked list
   int refs_;          // Number of live refs to this version
 
   // List of files per level
-  std::vector<FileMetaData*> files_[config::kNumLevels];
+  std::vector<FileMetaData*> files_[config::kNumLevels];     // 每层一个列表 记录所有的sst sst的元数据
 
   // Next file to compact based on seek stats.
   FileMetaData* file_to_compact_;
@@ -164,8 +167,10 @@ class Version {
   int compaction_level_;
 };
 
+// 版本集和
 class VersionSet {
  public:
+	//允许这一个构造函数
   VersionSet(const std::string& dbname, const Options* options,
              TableCache* table_cache, const InternalKeyComparator*);
   VersionSet(const VersionSet&) = delete;
@@ -177,7 +182,7 @@ class VersionSet {
   // is both saved to persistent state and installed as the new
   // current version.  Will release *mu while actually writing to the file.
   // REQUIRES: *mu is held on entry.
-  // REQUIRES: no other thread concurrently calls LogAndApply()
+  // REQUIRES: no other thread concurrently calls LogAndApply() 排他访问
   Status LogAndApply(VersionEdit* edit, port::Mutex* mu)
       EXCLUSIVE_LOCKS_REQUIRED(mu);
 
@@ -307,15 +312,15 @@ class VersionSet {
   // Opened lazily
   WritableFile* descriptor_file_;
   log::Writer* descriptor_log_;
-  Version dummy_versions_;  // Head of circular doubly-linked list of versions.
-  Version* current_;        // == dummy_versions_.prev_
+  Version dummy_versions_;  // 列表假头部 Head of circular doubly-linked list of versions.
+  Version* current_;        // Version 的 双向列表, 管理所有version == dummy_versions_.prev_
 
   // Per-level key at which the next compaction at that level should start.
   // Either an empty string, or a valid InternalKey.
   std::string compact_pointer_[config::kNumLevels];
 };
 
-// A Compaction encapsulates information about a compaction.
+// A Compaction encapsulates information封装信息 about a compaction.
 class Compaction {
  public:
   ~Compaction();

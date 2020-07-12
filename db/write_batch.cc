@@ -48,6 +48,7 @@ Status WriteBatch::Iterate(Handler* handler) const {
   input.remove_prefix(kHeader);
   Slice key, value;
   int found = 0;
+  //循环写入
   while (!input.empty()) {
     found++;
     char tag = input[0];

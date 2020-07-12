@@ -40,19 +40,20 @@ struct LEVELDB_EXPORT Range {
   Slice limit;  // Not included in the range
 };
 
-// A DB is a persistent ordered map from keys to values.
-// A DB is safe for concurrent access from multiple threads without
-// any external synchronization.
+// A DB is a persistent持久有序map ordered map from keys to values.
+// A DB is safe for concurrent access from multiple threads without any external synchronization.
+// 是并发安全的
 class LEVELDB_EXPORT DB {
  public:
   // Open the database with the specified "name".
-  // Stores a pointer to a heap-allocated database in *dbptr and returns
-  // OK on success.
+
+  // Stores a pointer to a heap-allocated database in *dbptr and returns OK on success.
   // Stores nullptr in *dbptr and returns a non-OK status on error.
+
   // Caller should delete *dbptr when it is no longer needed.
   static Status Open(const Options& options, const std::string& name,
                      DB** dbptr);
-
+  // 关掉构造函数
   DB() = default;
 
   DB(const DB&) = delete;
@@ -60,29 +61,27 @@ class LEVELDB_EXPORT DB {
 
   virtual ~DB();
 
-  // Set the database entry for "key" to "value".  Returns OK on success,
-  // and a non-OK status on error.
+  // Set the database entry for "key" to "value".
+  // Returns OK on success, and a non-OK status on error.
   // Note: consider setting options.sync = true.
   virtual Status Put(const WriteOptions& options, const Slice& key,
                      const Slice& value) = 0;
 
-  // Remove the database entry (if any) for "key".  Returns OK on
-  // success, and a non-OK status on error.  It is not an error if "key"
-  // did not exist in the database.
+  // Remove the database entry (if any) for "key". 不存在不生效，而不会返回一个错误
+  // Returns OK on success, and a non-OK status on error.
+  // It is not an error if "key" did not exist in the database.
   // Note: consider setting options.sync = true.
   virtual Status Delete(const WriteOptions& options, const Slice& key) = 0;
 
-  // Apply the specified updates to the database.
+  // Apply the specified updates更新 to the database.
   // Returns OK on success, non-OK on failure.
   // Note: consider setting options.sync = true.
   virtual Status Write(const WriteOptions& options, WriteBatch* updates) = 0;
 
-  // If the database contains an entry for "key" store the
-  // corresponding value in *value and return OK.
+  // If the database contains an entry for "key" store the corresponding value in *value and return OK.
   //
-  // If there is no entry for "key" leave *value unchanged and return
-  // a status for which Status::IsNotFound() returns true.
-  //
+  // If there is no entry for "key" leave *value unchanged 保持value参数不变 and return a status for which Status::IsNotFound() returns true.
+  // 返回 找不到
   // May return some other Status on an error.
   virtual Status Get(const ReadOptions& options, const Slice& key,
                      std::string* value) = 0;
@@ -105,10 +104,10 @@ class LEVELDB_EXPORT DB {
   // use "snapshot" after this call.
   virtual void ReleaseSnapshot(const Snapshot* snapshot) = 0;
 
-  // DB implementations can export properties about their state
-  // via this method.  If "property" is a valid property understood by this
-  // DB implementation, fills "*value" with its current value and returns
-  // true.  Otherwise returns false.
+  // DB implementations can export properties about their state via this method.
+  // 获取数据库的一些配置，统计属性
+  // If "property" is a valid property understood by this DB implementation, fills "*value" with its current value and returns true.
+  // Otherwise returns false. 出错返回false
   //
   //
   // Valid property names include:
@@ -135,28 +134,29 @@ class LEVELDB_EXPORT DB {
                                    uint64_t* sizes) = 0;
 
   // Compact the underlying storage for the key range [*begin,*end].
-  // In particular, deleted and overwritten versions are discarded,
-  // and the data is rearranged to reduce the cost of operations
-  // needed to access the data.  This operation should typically only
-  // be invoked by users who understand the underlying implementation.
+
+  // In particular, deleted and overwritten versions are discarded, 整理无效数据
+  // and the data is rearranged to reduce the cost of operations needed to access the data. 优化读写效率
+  // This operation should typically only be invoked by users who understand the underlying implementation. 高级用户使用
   //
-  // begin==nullptr is treated as a key before all keys in the database.
+  // begin==nullptr is treated as a key before all keys in the database.  nullptr表示无限
   // end==nullptr is treated as a key after all keys in the database.
+  //
   // Therefore the following call will compact the entire database:
   //    db->CompactRange(nullptr, nullptr);
   virtual void CompactRange(const Slice* begin, const Slice* end) = 0;
 };
 
-// Destroy the contents of the specified database.
+// Destroy the contents of the specified database. 破坏内容
 // Be very careful using this method.
 //
 // Note: For backwards compatibility, if DestroyDB is unable to list the
-// database files, Status::OK() will still be returned masking this failure.
+// database files, Status::OK() will still be returned masking this failure. 失败
 LEVELDB_EXPORT Status DestroyDB(const std::string& name,
                                 const Options& options);
 
-// If a DB cannot be opened, you may attempt to call this method to
-// resurrect as much of the contents of the database as possible.
+// If a DB cannot be opened, you may attempt to call this method to 如果打开数据库失败，因为一些奔溃导致，数据不完整，可以使用此方法恢复
+// resurrect复活 as much of the contents of the database as possible尽可能恢复.
 // Some data may be lost, so be careful when calling this function
 // on a database that contains important information.
 LEVELDB_EXPORT Status RepairDB(const std::string& dbname,

@@ -147,17 +147,19 @@ struct LEVELDB_EXPORT ReadOptions {
   ReadOptions() = default;
 
   // If true, all data read from underlying storage will be
-  // verified against corresponding checksums.
+  // verified against corresponding checksums. 读数据是否开启经验checksum验证
   bool verify_checksums = false;
 
   // Should the data read for this iteration be cached in memory?
   // Callers may wish to set this field to false for bulk scans.
+  // 读后是否加到缓存，利用下次读取，只是利于hot key
   bool fill_cache = true;
 
   // If "snapshot" is non-null, read as of the supplied snapshot
   // (which must belong to the DB that is being read and which must
   // not have been released).  If "snapshot" is null, use an implicit
   // snapshot of the state at the beginning of this read operation.
+  // 指定读取所基于的历史快照
   const Snapshot* snapshot = nullptr;
 };
 
@@ -167,18 +169,18 @@ struct LEVELDB_EXPORT WriteOptions {
 
   // If true, the write will be flushed from the operating system
   // buffer cache (by calling WritableFile::Sync()) before the write
-  // is considered complete.  If this flag is true, writes will be
-  // slower.
+  // is considered complete.  会同步到磁盘
+  // If this flag is true, writes will be slower.
   //
-  // If this flag is false, and the machine crashes, some recent
-  // writes may be lost.  Note that if it is just the process that
-  // crashes (i.e., the machine does not reboot), no writes will be
-  // lost even if sync==false.
+  // If this flag is false, and the machine crashes, some recent writes may be
+  // lost. 操作系统出问题了才会丢失 Note that if it is just the process that
+  // crashes (i.e., the machine does not reboot), no writes will be lost even if
+  // sync==false.
   //
-  // In other words, a DB write with sync==false has similar
-  // crash semantics as the "write()" system call.  A DB write
-  // with sync==true has similar crash semantics to a "write()"
-  // system call followed by "fsync()".
+  // In other words换句话说, a DB write with sync==false has similar crash
+  // semantics语义 as the "write()" system call. A DB write with sync==true has
+  // similar crash semantics to a "write()" system call followed by "fsync()".
+  // 开启sync, 只是对日志文件的同步磁盘生效
   bool sync = false;
 };
 

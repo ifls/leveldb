@@ -20,12 +20,13 @@ struct FileMetaData {
 
   int refs;
   int allowed_seeks;  // Seeks allowed until compaction
-  uint64_t number;
+  uint64_t number;    // sst 先后编号
   uint64_t file_size;    // File size in bytes
   InternalKey smallest;  // Smallest internal key served by table
   InternalKey largest;   // Largest internal key served by table
 };
 
+// 每次 sst 变动， 要生成这个类，执行 VersionSet::LogAndApply, 数据要么在日志中，要么在sst中，才能保证不丢失
 class VersionEdit {
  public:
   VersionEdit() { Clear(); }
@@ -57,7 +58,7 @@ class VersionEdit {
     compact_pointers_.push_back(std::make_pair(level, key));
   }
 
-  // Add the specified file at the specified number.
+  // Add the specified file at the specified number. 增加新文件
   // REQUIRES: This version has not been saved (see VersionSet::SaveTo)
   // REQUIRES: "smallest" and "largest" are smallest and largest keys in file
   void AddFile(int level, uint64_t file, uint64_t file_size,
@@ -67,6 +68,7 @@ class VersionEdit {
     f.file_size = file_size;
     f.smallest = smallest;
     f.largest = largest;
+    //加到集合
     new_files_.push_back(std::make_pair(level, f));
   }
 
@@ -96,9 +98,10 @@ class VersionEdit {
   bool has_next_file_number_;
   bool has_last_sequence_;
 
-  std::vector<std::pair<int, InternalKey>> compact_pointers_;
-  DeletedFileSet deleted_files_;
-  std::vector<std::pair<int, FileMetaData>> new_files_;
+  // 相关文件集合
+  std::vector<std::pair<int, InternalKey>> compact_pointers_;     // <int> 标识层级 0层，1层
+  DeletedFileSet deleted_files_;  //待删除的文件
+  std::vector<std::pair<int, FileMetaData>> new_files_;  //新增文件， imm -> l0 就会添加的这里
 };
 
 }  // namespace leveldb

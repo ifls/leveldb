@@ -23,7 +23,7 @@ enum RecordType {
   kLastType = 4  //一条日志的 结尾部分在此块上
 };
 
-// 用于追加枚举定义
+// 用于追加定义之后的枚举
 static const int kMaxRecordType = kLastType;
 
 //一个日志文件， 被分隔成多个物理块 32K
