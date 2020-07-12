@@ -32,14 +32,13 @@ namespace leveldb {
 			// Create a reader that will return log records from "*file".
 			// "*file" must remain live while this Reader is in use.
 			//
-			// If "reporter" is non-null, it is notified whenever some data is
-			// dropped due to a detected corruption.  "*reporter" must remain
-			// live while this Reader is in use.
+			// If "reporter" is non-null, it is notified whenever some data is dropped due to a detected corruption.
+			// "*reporter" must remain live while this Reader is in use.
 			//
 			// If "checksum" is true, verify checksums if available.
 			//
-			// The Reader will start reading at the first record located at physical
-			// position >= initial_offset within the file.
+			// The Reader will start reading at the first record located at physical position >= initial_offset
+			// within the file.
 			Reader(SequentialFile *file, Reporter *reporter, bool checksum, uint64_t initial_offset);
 
 			Reader(const Reader &) = delete;
@@ -48,16 +47,16 @@ namespace leveldb {
 
 			~Reader();
 
-			// Read the next record into *record.  Returns true if read
-			// successfully, false if we hit end of the input.  May use
-			// "*scratch" as temporary storage.  The contents filled in *record
-			// will only be valid until the next mutating operation on this
-			// reader or the next mutation to *scratch.
+			// Read the next record into *record.
+			// Returns true if read successfully, false if we hit end of the input输入文件.
+			// May use "*scratch" as temporary storage.
+			// The contents filled in *record will only be valid until the next mutating修改操作 operation on this reader or
+			// the next mutation to *scratch.
 			bool ReadRecord(Slice *record, std::string *scratch);
 
 			// Returns the physical offset of the last record returned by ReadRecord.
-			//
-			// Undefined before the first call to ReadRecord.
+			// 获取文件偏移，基于初始偏移
+			// Undefined before the first call to ReadRecord. 不就是0?
 			uint64_t LastRecordOffset();
 
 		private:
@@ -101,9 +100,8 @@ namespace leveldb {
 			// Offset at which to start looking for the first record to return
 			uint64_t const initial_offset_;  //初始偏移
 
-			// True if we are resynchronizing after a seek (initial_offset_ > 0). In
-			// particular, a run of kMiddleType and kLastType records can be silently
-			// skipped in this mode
+			// True if we are resynchronizing重新同步 after a seek (initial_offset_ > 0).
+			// In particular, a run of kMiddleType and kLastType records can be silently skipped in this mode.
 			bool resyncing_;
 		};
 

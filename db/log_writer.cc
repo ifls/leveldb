@@ -110,7 +110,7 @@ namespace leveldb {
 				//写入body
 				s = dest_->Append(Slice(ptr, length));
 				if (s.ok()) {
-					//不刷新到磁盘， 只是刷新到内核缓冲区，怎么保证日志不丢
+					//不刷新到磁盘， 只是刷新到内核缓冲区, 调用方根据sync选项调用文件的sync函数，刷到磁盘
 					s = dest_->Flush();
 				}
 			}

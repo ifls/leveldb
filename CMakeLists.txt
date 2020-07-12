@@ -334,6 +334,7 @@ if(LEVELDB_BUILD_TESTS)
   endfunction(leveldb_test)
 
   leveldb_test("db/c_test.c")
+  leveldb_test("test/dblog_test.cc")
   leveldb_test("db/fault_injection_test.cc")
 
   leveldb_test("issues/issue178_test.cc")
