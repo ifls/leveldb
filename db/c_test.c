@@ -147,10 +147,6 @@ uint8_t FilterKeyMatch(void *arg, const char *key, size_t length,
 	return fake_filter_result;
 }
 
-void MyTestLog {
-
-};
-
 int main(int argc, char **argv) {
 	leveldb_t *db;
 	leveldb_comparator_t *cmp;
