@@ -14,7 +14,7 @@ namespace leveldb {
 
 struct BlockContents;
 class Comparator;
-
+// 解析 block， 读操作是通过 迭代器完成
 class Block {
  public:
   // Initialize the block with the specified contents.
