@@ -45,11 +45,11 @@ namespace leveldb {
 		explicit Writer(port::Mutex *mu)
 				: batch(nullptr), sync(false), done(false), cv(mu) {}
 
-		Status status;
-		WriteBatch *batch;
-		bool sync;
-		bool done;
-		port::CondVar cv;
+		Status status;  //记录写操作的结果
+		WriteBatch *batch; // 保存写操作
+		bool sync;   //根据配置决定是否立即同步到磁盘
+		bool done;  //是否已经写完成
+		port::CondVar cv;  //条件变量，用于阻塞排队
 	};
 
 	struct DBImpl::CompactionState {
@@ -1119,21 +1119,24 @@ namespace leveldb {
 		return versions_->MaxNextLevelOverlappingBytes();
 	}
 
-	Status DBImpl::Get(const ReadOptions &options, const Slice &key,
-					   std::string *value) {
+	// 读取数据
+	Status DBImpl::Get(const ReadOptions &options, const Slice &key, std::string *value) {
 		Status s;
-		MutexLock l(&mutex_);
+		MutexLock l(&mutex_);  // 加锁 raii 资源获取 is 初始化
+
+		//计算版本号
 		SequenceNumber snapshot;
 		if (options.snapshot != nullptr) {
-			snapshot =
-					static_cast<const SnapshotImpl *>(options.snapshot)->sequence_number();
+			snapshot = static_cast<const SnapshotImpl *>(options.snapshot)->sequence_number();
 		} else {
 			snapshot = versions_->LastSequence();
 		}
 
 		MemTable *mem = mem_;
 		MemTable *imm = imm_;
+		// 当前 数据文件的 版本
 		Version *current = versions_->current();
+		//引用计数，
 		mem->Ref();
 		if (imm != nullptr) imm->Ref();
 		current->Ref();
@@ -1145,14 +1148,15 @@ namespace leveldb {
 		{
 			mutex_.Unlock();
 			// First look in the memtable, then in the immutable memtable (if any).
-			LookupKey lkey(key, snapshot);
+			LookupKey lkey(key, snapshot); //构造查询key对象
 			// 先到内存表
 			if (mem->Get(lkey, value, &s)) {
 				// Done
 			} else if (imm != nullptr && imm->Get(lkey, value, &s)) {
-				//再到不变内存表
+				//可变表找不到再到不变内存表
 				// Done
 			} else {
+				//从数据文件里找
 				s = current->Get(options, lkey, value, &stats);
 				have_stat_update = true;
 			}
@@ -1160,8 +1164,10 @@ namespace leveldb {
 		}
 
 		if (have_stat_update && current->UpdateStats(stats)) {
+			//判断是否进行压缩
 			MaybeScheduleCompaction();
 		}
+		//减引用
 		mem->Unref();
 		if (imm != nullptr) imm->Unref();
 		current->Unref();
@@ -1197,7 +1203,7 @@ namespace leveldb {
 		snapshots_.Delete(static_cast<const SnapshotImpl *>(snapshot));
 	}
 
-// Convenience methods
+	// 方便函数 Convenience methods
 	Status DBImpl::Put(const WriteOptions &o, const Slice &key, const Slice &val) {
 		return DB::Put(o, key, val);
 	}
@@ -1206,27 +1212,31 @@ namespace leveldb {
 		return DB::Delete(options, key);
 	}
 
-// put 和 delete 最终也是write方法
+	// put 和 delete 最终也是write方法
 	Status DBImpl::Write(const WriteOptions &options, WriteBatch *updates) {
 		Writer w(&mutex_);
 		w.batch = updates;
-		w.sync = options.sync;
+		w.sync = options.sync;  //根据配置决定是否立即同步到磁盘
 		w.done = false;
 
-		MutexLock l(&mutex_);
-		writers_.push_back(&w);
+		MutexLock l(&mutex_);  //构造函数，会加锁，析构函数会解锁
+		writers_.push_back(&w);   // 入队列
+		// 控制并发 阻塞指定写完成，或者是头一个写任务
 		while (!w.done && &w != writers_.front()) {
 			w.cv.Wait();
 		}
-		if (w.done) {
+
+		// 第一个 或者 已经被其他线程done 都会过来
+		if (w.done) {  //排除掉 已经写完成的情况
 			return w.status;
 		}
 
 		// May temporarily unlock and wait.
-		// 1 新建内存表
+		// 1 新建内存表，整理内存磁盘准备空间
 		Status status = MakeRoomForWrite(updates == nullptr);
-		uint64_t last_sequence = versions_->LastSequence();
+		uint64_t last_sequence = versions_->LastSequence();   //快照版本号
 		Writer *last_writer = &w;
+
 		if (status.ok() && updates != nullptr) {  // nullptr batch is for compactions
 			WriteBatch *write_batch = BuildBatchGroup(&last_writer);
 			// 插入序号
@@ -1234,13 +1244,12 @@ namespace leveldb {
 			// 更新序号， 加上条目数
 			last_sequence += WriteBatchInternal::Count(write_batch);
 
-			// Add to log and apply to memtable. 写入只需要两步 We can release the lock
-			// during this phase since &w is currently responsible for logging
-			// and protects against concurrent loggers and concurrent writes
-			// into mem_.
+			// Add to log and apply to memtable. 写入只需要日志和写入跳表两步
+			// We can release the lock during this phase since &w(Writer) is currently responsible for logging
+			// and protects against concurrent loggers and concurrent writes into mem_. 解锁后怎么保护的并发？
 			{
 				mutex_.Unlock();
-				// 2 追加日志 将writeBatch 字符串 写到日志
+				// 2 追加日志 将writeBatch 字符串整个 写到日志
 				status = log_->AddRecord(WriteBatchInternal::Contents(write_batch));
 				bool sync_error = false;
 				if (status.ok() && options.sync) {
@@ -1251,36 +1260,41 @@ namespace leveldb {
 					}
 				}
 				if (status.ok()) {
-					// 3. 插入 memtable
+					// 3. 插入到 memtable，其中每写入一个kv sequence都+1
 					status = WriteBatchInternal::InsertInto(write_batch, mem_);
 				}
-				mutex_.Lock();  //后面哪里解锁？
+				mutex_.Lock();  //上面析构函数解锁
 				if (sync_error) {
-					// The state of the log file is indeterminate: the log record we
-					// just added may or may not show up when the DB is re-opened.
-					// So we force the DB into a mode where all future writes fail.
+					// The state of the log file is indeterminate不确定状态，尚未持久化:
+					// the log record we just added may or may not show up when the DB is re-opened. 不确定重启的时候是前进还是后退
+					// So we force the DB into a mode where all future writes fail 让之后的写入都失败.  //为什么这样做
 					RecordBackgroundError(status);
 				}
 			}
+			// tmp_batch_ 是啥
 			if (write_batch == tmp_batch_) tmp_batch_->Clear();
 
-			//更新最终的序号
+			//更新最终的序号，版本号，
 			versions_->SetLastSequence(last_sequence);
 		}
 
 		while (true) {
+			// 出队列
 			Writer *ready = writers_.front();
 			writers_.pop_front();
+
 			if (ready != &w) {
-				ready->status = status;
-				ready->done = true;
-				ready->cv.Signal();
+				ready->status = status; //保存处理状态
+				ready->done = true; //标记写入完成
+				ready->cv.Signal(); //唤醒当前线程
 			}
+			// ready == &w 不处理？
 			if (ready == last_writer) break;
 		}
 
 		// Notify new head of write queue
 		if (!writers_.empty()) {
+			//之前的都写完了，唤醒之后的头部，继续处理
 			writers_.front()->cv.Signal();
 		}
 
@@ -1292,23 +1306,24 @@ namespace leveldb {
 	WriteBatch *DBImpl::BuildBatchGroup(Writer **last_writer) {
 		mutex_.AssertHeld();
 		assert(!writers_.empty());
+
 		Writer *first = writers_.front();
 		WriteBatch *result = first->batch;
-		assert(result != nullptr);
+		assert(result != nullptr);  //第一个writer的批量写任务，必须要有
 
 		size_t size = WriteBatchInternal::ByteSize(first->batch);
 
 		// Allow the group to grow up to a maximum size, but if the
 		// original write is small, limit the growth so we do not slow
 		// down the small write too much.
-		size_t max_size = 1 << 20;
-		if (size <= (128 << 10)) {
+		size_t max_size = 1 << 20; //1M
+		if (size <= (128 << 10)) { // 128K
 			max_size = size + (128 << 10);
 		}
 
 		*last_writer = first;
 		std::deque<Writer *>::iterator iter = writers_.begin();
-		++iter;  // Advance past "first"
+		++iter;  // 越过 第一个 Advance past "first"
 		for (; iter != writers_.end(); ++iter) {
 			Writer *w = *iter;
 			if (w->sync && !first->sync) {
@@ -1317,6 +1332,7 @@ namespace leveldb {
 			}
 
 			if (w->batch != nullptr) {
+				// 长度累加
 				size += WriteBatchInternal::ByteSize(w->batch);
 				if (size > max_size) {
 					// Do not make batch too big
@@ -1324,6 +1340,7 @@ namespace leveldb {
 				}
 
 				// Append to *result
+				// first 分开处理
 				if (result == first->batch) {
 					// Switch to temporary batch instead of disturbing caller's batch
 					result = tmp_batch_;
@@ -1331,7 +1348,9 @@ namespace leveldb {
 					WriteBatchInternal::Append(result, first->batch);
 				}
 				WriteBatchInternal::Append(result, w->batch);
+				//所有操作，都打包都一个
 			}
+			// 记录合并后的尾部writer
 			*last_writer = w;
 		}
 		return result;
@@ -1339,18 +1358,19 @@ namespace leveldb {
 
 // REQUIRES: mutex_ is held
 // REQUIRES: this thread is currently at the front of the writer queue
-	Status DBImpl::MakeRoomForWrite(bool force) {
+	Status DBImpl::MakeRoomForWrite(bool force) {  //force代表是否强制一次compact
 		mutex_.AssertHeld();
 		assert(!writers_.empty());
-		bool allow_delay = !force;
+
+		bool allow_delay = !force;  //基本 force 都是true
 		Status s;
 		while (true) {
 			if (!bg_error_.ok()) {
-				// Yield previous error
+				// Yield拿出 previous error， 让之后的写都失败
 				s = bg_error_;
 				break;
-			} else if (allow_delay && versions_->NumLevelFiles(0) >=
-									  config::kL0_SlowdownWritesTrigger) {
+			} else if (allow_delay && versions_->NumLevelFiles(0) >= config::kL0_SlowdownWritesTrigger) {
+				// 允许延迟
 				// We are getting close to hitting a hard limit on the number of
 				// L0 files.  Rather than delaying a single write by several
 				// seconds when we hit the hard limit, start delaying each
@@ -1358,42 +1378,46 @@ namespace leveldb {
 				// this delay hands over some CPU to the compaction thread in
 				// case it is sharing the same core as the writer.
 				mutex_.Unlock();
-				//减慢写入
+				//当前线程，睡眠一段时间，减慢写入
 				env_->SleepForMicroseconds(1000);
-				allow_delay = false;  // Do not delay a single write more than once
+				allow_delay = false;  // 只延迟一次 Do not delay a single write more than once
 				mutex_.Lock();
-			} else if (!force &&
-					   (mem_->ApproximateMemoryUsage() <= options_.write_buffer_size)) {
+			} else if (!force && (mem_->ApproximateMemoryUsage() <= options_.write_buffer_size)) {
+				// !force 标识不用强制compact
 				// There is room in current memtable
 				break;  //有空间了，跳出循环，继续之后的写入
-			} else if (imm_ != nullptr) {
+			} else if (imm_ != nullptr) {  //这里可变表已经写满
 				// We have filled up the current memtable, but the previous
 				// one is still being compacted, so we wait. 当前的已经填满，
-				// 之前的不变表在压缩，不能变为不变表，新建内存表，只能等待
+				// 之前的不变表在压缩，memtable不能变为不变表，再新建memtable，只能等待
 				Log(options_.info_log, "Current memtable full; waiting...\n");
 				background_work_finished_signal_.Wait();
 			} else if (versions_->NumLevelFiles(0) >= config::kL0_StopWritesTrigger) {
 				// There are too many level-0 files.
-				// //停止写入，等待0层文件，压缩完成，减少数量
+				// //停止写入，等待0层文件合并压缩完成，减少数量
 				Log(options_.info_log, "Too many L0 files; waiting...\n");
 				background_work_finished_signal_.Wait();
 			} else {
 				// 切换为不变表， 新建内存表，并开启压缩不变表
 				// Attempt to switch to a new memtable and trigger compaction of old
 				assert(versions_->PrevLogNumber() == 0);
+
 				uint64_t new_log_number = versions_->NewFileNumber();
 				WritableFile *lfile = nullptr;
+				// 创建新的日志文件，env代表操作系统环境
 				s = env_->NewWritableFile(LogFileName(dbname_, new_log_number), &lfile);
 				if (!s.ok()) {
 					// Avoid chewing through file number space in a tight loop.
 					versions_->ReuseFileNumber(new_log_number);
 					break;
 				}
+
 				delete log_;
 				delete logfile_;
-				logfile_ = lfile;
+				logfile_ = lfile;  //保存新的日志文件
 				logfile_number_ = new_log_number;
-				log_ = new log::Writer(lfile);
+				log_ = new log::Writer(lfile); //新的日志器
+
 				imm_ = mem_;
 				has_imm_.store(true, std::memory_order_release);
 				// 新建 memtable

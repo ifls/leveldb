@@ -155,7 +155,7 @@ namespace leveldb {
 	struct SkipList<Key, Comparator>::Node {
 		explicit Node(const Key &k) : key(k) {}
 
-		Key const key;
+		Key const key;  //公开的key
 
 		// Accessors/mutators for links.  Wrapped in methods so we can
 		// add the appropriate barriers as necessary.
@@ -186,6 +186,7 @@ namespace leveldb {
 
 	private:
 		// Array of length equal to the node height.  next_[0] is lowest level link.
+		// 私有的多层链表指针
 		std::atomic<Node *> next_[1];  // next_[0] 最底层连接
 	};
 

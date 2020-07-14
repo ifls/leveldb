@@ -32,7 +32,7 @@ namespace leveldb {
 
 		Writer::~Writer() = default;
 
-// 记录 写操作， 更新操作
+		// 记录 写操作， 更新操作
 		Status Writer::AddRecord(const Slice &slice) {
 			const char *ptr = slice.data();
 			size_t left = slice.size();
