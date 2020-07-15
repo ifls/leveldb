@@ -174,13 +174,13 @@ class DBImpl : public DB {
   // State below is protected by mutex_
   port::Mutex mutex_;  // port 锁
   std::atomic<bool> shutting_down_;
-  port::CondVar background_work_finished_signal_ GUARDED_BY(mutex_);
+  port::CondVar background_work_finished_signal_ GUARDED_BY(mutex_);   //后台压缩任务的条件变量
   MemTable* mem_;  //内存表
   MemTable* imm_ GUARDED_BY(mutex_);  // 不变内存表 Memtable being compacted
   std::atomic<bool> has_imm_;         // So bg thread can detect non-null imm_
-  WritableFile* logfile_;
-  uint64_t logfile_number_ GUARDED_BY(mutex_);
-  log::Writer* log_;
+  WritableFile* logfile_;   //日志输出文件
+  uint64_t logfile_number_ GUARDED_BY(mutex_);  //日志文件序号
+  log::Writer* log_;  //日志器
   uint32_t seed_ GUARDED_BY(mutex_);  // For sampling.
 
   // Queue of writers. 输出队列

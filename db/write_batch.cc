@@ -41,14 +41,14 @@ namespace leveldb {
 
 	Status WriteBatch::Iterate(Handler *handler) const {
 		Slice input(rep_);
-		if (input.size() < kHeader) {   // 头部少了
+		if (input.size() < kHeader) {   // 头部都没有，算成是错误数据
 			return Status::Corruption("malformed WriteBatch (too small)");
 		}
 
 		input.remove_prefix(kHeader);   // 之后是重复的 record[n] 数组
 		Slice key, value;
 		int found = 0;
-		//循环写入
+		//循环写入 每个entry
 		while (!input.empty()) {
 			found++;
 			//第一字节是类型
@@ -143,7 +143,7 @@ namespace leveldb {
 	// 插入到内存表
 	Status WriteBatchInternal::InsertInto(const WriteBatch *b, MemTable *memtable) {
 		MemTableInserter inserter;
-		inserter.sequence_ = WriteBatchInternal::Sequence(b);
+		inserter.sequence_ = WriteBatchInternal::Sequence(b); //从writebatch里拿到序号
 		inserter.mem_ = memtable;
 		return b->Iterate(&inserter);
 	}

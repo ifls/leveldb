@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace leveldb {
-
+	// 内存分配器
 	class Arena {
 	public:
 		Arena();

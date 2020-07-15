@@ -11,138 +11,153 @@
 
 namespace leveldb {
 
-static Slice GetLengthPrefixedSlice(const char* data) {
-  uint32_t len;
-  const char* p = data;
-  p = GetVarint32Ptr(p, p + 5, &len);  // +5: we assume "p" is not corrupted
-  return Slice(p, len);
-}
+	static Slice GetLengthPrefixedSlice(const char *data) {
+		uint32_t len;
+		const char *p = data;
+		p = GetVarint32Ptr(p, p + 5, &len);  // +5: we assume "p" is not corrupted
+		return Slice(p, len);
+	}
 
-MemTable::MemTable(const InternalKeyComparator& comparator)
-    : comparator_(comparator), refs_(0), table_(comparator_, &arena_) {}
+	MemTable::MemTable(const InternalKeyComparator &comparator)
+			: comparator_(comparator), refs_(0), table_(comparator_, &arena_) {}
 
-MemTable::~MemTable() { assert(refs_ == 0); }
+	MemTable::~MemTable() { assert(refs_ == 0); }
 
-size_t MemTable::ApproximateMemoryUsage() { return arena_.MemoryUsage(); }
+	size_t MemTable::ApproximateMemoryUsage() { return arena_.MemoryUsage(); }
 
-int MemTable::KeyComparator::operator()(const char* aptr,
-                                        const char* bptr) const {
-  // Internal keys are encoded as length-prefixed strings.
-  Slice a = GetLengthPrefixedSlice(aptr);
-  Slice b = GetLengthPrefixedSlice(bptr);
-  return comparator.Compare(a, b);
-}
+	int MemTable::KeyComparator::operator()(const char *aptr,
+											const char *bptr) const {
+		// Internal keys are encoded as length-prefixed strings.
+		Slice a = GetLengthPrefixedSlice(aptr);
+		Slice b = GetLengthPrefixedSlice(bptr);
+		return comparator.Compare(a, b);
+	}
 
 // Encode a suitable internal key target for "target" and return it.
 // Uses *scratch as scratch space, and the returned pointer will point
 // into this scratch space.
-static const char* EncodeKey(std::string* scratch, const Slice& target) {
-  scratch->clear();
-  PutVarint32(scratch, target.size());
-  scratch->append(target.data(), target.size());
-  return scratch->data();
-}
+	static const char *EncodeKey(std::string *scratch, const Slice &target) {
+		scratch->clear();
+		PutVarint32(scratch, target.size());
+		scratch->append(target.data(), target.size());
+		return scratch->data();
+	}
 
-class MemTableIterator : public Iterator {
- public:
-  explicit MemTableIterator(MemTable::Table* table) : iter_(table) {}
+	class MemTableIterator : public Iterator {
+	public:
+		explicit MemTableIterator(MemTable::Table *table) : iter_(table) {}
 
-  MemTableIterator(const MemTableIterator&) = delete;
-  MemTableIterator& operator=(const MemTableIterator&) = delete;
+		MemTableIterator(const MemTableIterator &) = delete;
 
-  ~MemTableIterator() override = default;
+		MemTableIterator &operator=(const MemTableIterator &) = delete;
 
-  bool Valid() const override { return iter_.Valid(); }
-  void Seek(const Slice& k) override { iter_.Seek(EncodeKey(&tmp_, k)); }
-  void SeekToFirst() override { iter_.SeekToFirst(); }
-  void SeekToLast() override { iter_.SeekToLast(); }
-  void Next() override { iter_.Next(); }
-  void Prev() override { iter_.Prev(); }
-  Slice key() const override { return GetLengthPrefixedSlice(iter_.key()); }
-  Slice value() const override {
-    Slice key_slice = GetLengthPrefixedSlice(iter_.key());
-    return GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
-  }
+		~MemTableIterator() override = default;
 
-  Status status() const override { return Status::OK(); }
+		bool Valid() const override { return iter_.Valid(); }
 
- private:
-  MemTable::Table::Iterator iter_;
-  std::string tmp_;  // For passing to EncodeKey
-};
+		void Seek(const Slice &k) override { iter_.Seek(EncodeKey(&tmp_, k)); }
 
-Iterator* MemTable::NewIterator() { return new MemTableIterator(&table_); }
+		void SeekToFirst() override { iter_.SeekToFirst(); }
 
-// sequence 在函数结束后会立刻++
-void MemTable::Add(SequenceNumber s, ValueType type, const Slice& key,
-                   const Slice& value) {
-  // Format of an entry is concatenation of:
-  //  key_size     : varint32 of internal_key.size()
-  //  key bytes    : char[internal_key.size()]
-  //  tag 8B       : sequence 7B | type 1B
-  //  value_size   : varint32 of value.size()
-  //  value bytes  : char[value.size()]
-  size_t key_size = key.size();
-  size_t val_size = value.size();
-  size_t internal_key_size = key_size + 8;
-  const size_t encoded_len = VarintLength(internal_key_size) +
-                             internal_key_size + VarintLength(val_size) +
-                             val_size;
-  char* buf = arena_.Allocate(encoded_len);
-  char* p = EncodeVarint32(buf, internal_key_size);
-  std::memcpy(p, key.data(), key_size);
-  p += key_size;
-  // seq 7B type 1B
-  EncodeFixed64(p, (s << 8) | type);
-  p += 8;
+		void SeekToLast() override { iter_.SeekToLast(); }
 
-  p = EncodeVarint32(p, val_size);
-  std::memcpy(p, value.data(), val_size);
-  assert(p + val_size == buf + encoded_len);
-  // 只有指针？ 没有长度？ 0x00 结尾
-  table_.Insert(buf);
-}
+		void Next() override { iter_.Next(); }
 
-// 内存表 get skip 无Get 接口, 通过迭代器内部去获取数据
-bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
-  Slice memkey = key.memtable_key();
-  Table::Iterator iter(&table_);
-  // lookup key 指定了 实际的key 以及 sequence
-  iter.Seek(memkey.data());
-  if (iter.Valid()) {
-    // entry format is:
-    //    klength  varint32
-    //    userkey  char[klength]
-    //    tag      uint64
-    //    vlength  varint32
-    //    value    char[vlength]
-    // Check that it belongs to same user key.  We do not check the
-    // sequence number since the Seek() call above should have skipped
-    // all entries with overly large sequence numbers.
-    // 拿到条目
-    const char* entry = iter.key();
-    uint32_t key_length;
-    const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
-    // 键相等
-    if (comparator_.comparator.user_comparator()->Compare(
-            Slice(key_ptr, key_length - 8), key.user_key()) == 0) {
-      // Correct user key
-      const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
-      //判断tag
-      switch (static_cast<ValueType>(tag & 0xff)) {
-        case kTypeValue: {
-          Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-          //拿到value
-          value->assign(v.data(), v.size());
-          return true;
-        }
-        case kTypeDeletion:
-          *s = Status::NotFound(Slice());
-          return true;
-      }
-    }
-  }
-  return false;
-}
+		void Prev() override { iter_.Prev(); }
+
+		Slice key() const override { return GetLengthPrefixedSlice(iter_.key()); }
+
+		Slice value() const override {
+			Slice key_slice = GetLengthPrefixedSlice(iter_.key());
+			return GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
+		}
+
+		Status status() const override { return Status::OK(); }
+
+	private:
+		MemTable::Table::Iterator iter_;
+		std::string tmp_;  // For passing to EncodeKey
+	};
+
+	Iterator *MemTable::NewIterator() { return new MemTableIterator(&table_); }
+
+	// sequence 在函数结束后会立刻++
+	// type 区分 插入kv和删除k两种操作
+	// 删除 是 value 是 空 Slice()
+	void MemTable::Add(SequenceNumber s, ValueType type, const Slice &key,
+					   const Slice &value) {
+		// Format of an entry is concatenation of:
+		//  key_size     : varint32 of internal_key.size()
+		//  key bytes    : char[internal_key.size()]
+		//  tag 8B       : sequence 7B | type 1B
+		//  value_size   : varint32 of value.size()
+		//  value bytes  : char[value.size()]
+		size_t key_size = key.size();
+		size_t val_size = value.size();
+		size_t internal_key_size = key_size + 8;
+		const size_t encoded_len = VarintLength(internal_key_size) +
+								   internal_key_size + VarintLength(val_size) +
+								   val_size;
+		// 分配内存空间
+		char *buf = arena_.Allocate(encoded_len);
+		//key
+		char *p = EncodeVarint32(buf, internal_key_size);
+		std::memcpy(p, key.data(), key_size);
+		p += key_size;
+		// seq 7B type 1B
+		EncodeFixed64(p, (s << 8) | type);
+		p += 8;
+
+		//value
+		p = EncodeVarint32(p, val_size);
+		std::memcpy(p, value.data(), val_size);
+		assert(p + val_size == buf + encoded_len);
+		// 只有指针？ 没有长度？ 0x00 结尾
+		table_.Insert(buf);        //整个 kv 插入到跳表作为key
+	}
+
+	// 内存表 get skiplist类 无Get 接口, 通过迭代器内部去获取数据
+	bool MemTable::Get(const LookupKey &key, std::string *value, Status *s) {
+		Slice memkey = key.memtable_key();
+		Table::Iterator iter(&table_);  //跳表迭代器
+		// lookup key 指定了 实际的key 以及 sequence
+		// 定位到第一个 >= key 的位置
+		iter.Seek(memkey.data());
+		if (iter.Valid()) {
+			// entry format is:
+			//    klength  varint32
+			//    userkey  char[klength]
+			//    tag      uint64
+			//    vlength  varint32
+			//    value    char[vlength]
+			// Check that it belongs to same user key.  We do not check the
+			// sequence number since the Seek() call above should have skipped
+			// all entries with overly large sequence numbers.
+			// 拿到条目
+			const char *entry = iter.key();
+			uint32_t key_length;
+			const char *key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
+			// 键相等
+			if (comparator_.comparator.user_comparator()->Compare(Slice(key_ptr, key_length - 8), key.user_key()) ==
+				0) {
+				// Correct user key
+				const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
+				//判断tag
+				switch (static_cast<ValueType>(tag & 0xff)) {
+					case kTypeValue: {  //返回拿到的值
+						Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
+						//拿到value
+						value->assign(v.data(), v.size());
+						return true;
+					}
+					case kTypeDeletion:  //返回找不到
+						*s = Status::NotFound(Slice());
+						return true;
+				}
+			}
+			//只有 > key的， 不符合
+		}
+		return false;
+	}
 
 }  // namespace leveldb
