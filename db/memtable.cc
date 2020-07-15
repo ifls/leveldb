@@ -136,6 +136,7 @@ namespace leveldb {
 			// 拿到条目
 			const char *entry = iter.key();
 			uint32_t key_length;
+			// 拿到key 的长度, 变长编码, 最长5B
 			const char *key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
 			// 键相等
 			if (comparator_.comparator.user_comparator()->Compare(Slice(key_ptr, key_length - 8), key.user_key()) ==

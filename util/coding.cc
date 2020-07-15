@@ -22,12 +22,12 @@ namespace leveldb {
     char *EncodeVarint32(char *dst, uint32_t v) {
         // Operate on characters as unsigneds
         uint8_t * ptr = reinterpret_cast<uint8_t *>(dst);
-        static const int B = 128;
+        static const int B = 128;  //0x 10000000
         if (v < (1 << 7)) {  //0x01111111 + 1 == 0x1000 0000 128
             *(ptr++) = v;
         } else if (v < (1 << 14)) {  // 0x0011 1111 1111 1111 + 1 == 0x0100 0000 0000 0000
-            *(ptr++) = v | B;    // 2B
-            *(ptr++) = v >> 7;
+            *(ptr++) = v | B;    // 2B  每个字节最高位是1,表示连续
+            *(ptr++) = v >> 7;   //
         } else if (v < (1 << 21)) {  //3B
             *(ptr++) = v | B;
             *(ptr++) = (v >> 7) | B;
@@ -56,6 +56,7 @@ namespace leveldb {
     char *EncodeVarint64(char *dst, uint64_t v) {
         static const int B = 128;
         uint8_t * ptr = reinterpret_cast<uint8_t *>(dst);
+        // 比上面的Varint32简洁
         while (v >= B) {
             *(ptr++) = v | B;
             v >>= 7;
@@ -70,11 +71,13 @@ namespace leveldb {
         dst->append(buf, ptr - buf);
     }
 
+    // 变长 长度编码 + []byte
     void PutLengthPrefixedSlice(std::string *dst, const Slice &value) {
         PutVarint32(dst, value.size());
         dst->append(value.data(), value.size());
     }
 
+    // 计算可变编码长度
     int VarintLength(uint64_t v) {
         int len = 1;
         while (v >= 128) {
@@ -84,13 +87,13 @@ namespace leveldb {
         return len;
     }
 
-    const char *GetVarint32PtrFallback(const char *p, const char *limit,
-                                       uint32_t *value) {
+    const char *GetVarint32PtrFallback(const char *p, const char *limit, uint32_t *value) {
         uint32_t result = 0;
+        // 最多左移28 bit
         for (uint32_t shift = 0; shift <= 28 && p < limit; shift += 7) {
             uint32_t byte = *(reinterpret_cast<const uint8_t *>(p));
             p++;
-            if (byte & 128) {
+            if (byte & 128) { //  每字节高8位为1, 表示之后的数据也是一部分
                 // More bytes are present
                 result |= ((byte & 127) << shift);
             } else {
@@ -143,8 +146,7 @@ namespace leveldb {
         }
     }
 
-    const char *GetLengthPrefixedSlice(const char *p, const char *limit,
-                                       Slice *result) {
+    const char *GetLengthPrefixedSlice(const char *p, const char *limit, Slice *result) {
         uint32_t len;
         p = GetVarint32Ptr(p, limit, &len);
         if (p == nullptr) return nullptr;
