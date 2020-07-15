@@ -104,7 +104,7 @@ namespace leveldb {
                                   const InternalKey *end,    // nullptr means after all keys
                                   std::vector<FileMetaData *> *inputs);
 
-        // Returns true iff some file in the specified level overlaps
+        // Returns true iff some file in the specified level overlaps 在某一层的文件中, key范围是否重叠
         // some part of [*smallest_user_key,*largest_user_key].
         // smallest_user_key==nullptr represents a key smaller than all the DB's keys.
         // largest_user_key==nullptr represents a key largest than all the DB's keys.
@@ -112,7 +112,6 @@ namespace leveldb {
 
         // Return the level at which we should place a new memtable compaction
         // result that covers the range [smallest_user_key,largest_user_key].
-        // 没看到 用的地方
         int PickLevelForMemTableOutput(const Slice &smallest_user_key, const Slice &largest_user_key);
 
         int NumFiles(int level) const { return files_[level].size(); }
@@ -145,15 +144,14 @@ namespace leveldb {
 
         Iterator *NewConcatenatingIterator(const ReadOptions &, int level) const;
 
-        // Call func(arg, level, f) for every file that overlaps user_key in
-        // order from newest to oldest.  If an invocation of func returns
-        // false, makes no more calls.
+        // Call func(arg, level, f) for every file that overlaps user_key in order from newest to oldest.
+        // If an invocation of func returns false, makes no more calls.
         //
         // REQUIRES: user portion of internal_key == user_key.
-        void ForEachOverlapping(Slice user_key, Slice internal_key, void *arg,
-                                bool (*func)(void *, int, FileMetaData *));
+        void
+        ForEachOverlapping(Slice user_key, Slice internal_key, void *arg, bool (*func)(void *, int, FileMetaData *));
 
-        VersionSet *vset_;  // 所属的集合 VersionSet to which this Version belongs
+        VersionSet *vset_;  // 所属的version集合 VersionSet to which this Version belongs
         Version *next_;     // 双向链表 Next version in linked list
         Version *prev_;     // Previous version in linked list
         int refs_;          // Number of live refs to this version
@@ -162,7 +160,7 @@ namespace leveldb {
         std::vector<FileMetaData *> files_[config::kNumLevels];     // 每层一个列表 记录所有的sst sst的元数据
 
         // Next file to compact based on seek stats.
-        FileMetaData *file_to_compact_;
+        FileMetaData *file_to_compact_;   //
         int file_to_compact_level_;
 
         // Level that should be compacted next and its compaction score.
@@ -176,8 +174,8 @@ namespace leveldb {
     class VersionSet {
     public:
         //允许这一个构造函数
-        VersionSet(const std::string &dbname, const Options *options,
-                   TableCache *table_cache, const InternalKeyComparator *);
+        VersionSet(const std::string &dbname, const Options *options, TableCache *table_cache,
+                   const InternalKeyComparator *);
 
         VersionSet(const VersionSet &) = delete;
 
@@ -293,11 +291,9 @@ namespace leveldb {
 
         void Finalize(Version *v);
 
-        void GetRange(const std::vector<FileMetaData *> &inputs, InternalKey *smallest,
-                      InternalKey *largest);
+        void GetRange(const std::vector<FileMetaData *> &inputs, InternalKey *smallest, InternalKey *largest);
 
-        void GetRange2(const std::vector<FileMetaData *> &inputs1,
-                       const std::vector<FileMetaData *> &inputs2,
+        void GetRange2(const std::vector<FileMetaData *> &inputs1, const std::vector<FileMetaData *> &inputs2,
                        InternalKey *smallest, InternalKey *largest);
 
         void SetupOtherInputs(Compaction *c);
@@ -307,7 +303,7 @@ namespace leveldb {
 
         void AppendVersion(Version *v);
 
-        Env *const env_;
+        Env *const env_;   //代表系统环境
         const std::string dbname_;
         const Options *const options_;
         TableCache *const table_cache_;
@@ -320,9 +316,9 @@ namespace leveldb {
         uint64_t prev_log_number_;  // 0 or backing store for memtable being compacted
 
         // Opened lazily
-        WritableFile *descriptor_file_;
-        log::Writer *descriptor_log_;
-        Version dummy_versions_;  // 列表假头部 Head of circular doubly-linked list of versions.
+        WritableFile *descriptor_file_;  // manifest 文件
+        log::Writer *descriptor_log_;  // manifest 日志器
+        Version dummy_versions_;  // 列表伪头部 Head of circular doubly-linked list of versions.
         Version *current_;        // Version 的 双向列表, 管理所有version == dummy_versions_.prev_
 
         // Per-level key at which the next compaction at that level should start.
