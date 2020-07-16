@@ -191,11 +191,9 @@ namespace leveldb {
 	};
 
 	template<typename Key, class Comparator>
-	typename SkipList<Key, Comparator>::Node *SkipList<Key, Comparator>::NewNode(
-			const Key &key, int height) {
+	typename SkipList<Key, Comparator>::Node *SkipList<Key, Comparator>::NewNode(const Key &key, int height) {
 		//分配更多的空间存放多层指针
-		char *const node_memory = arena_->AllocateAligned(
-				sizeof(Node) + sizeof(std::atomic<Node *>) * (height - 1));
+		char *const node_memory = arena_->AllocateAligned(sizeof(Node) + sizeof(std::atomic<Node *>) * (height - 1));
 		return new(node_memory) Node(key);
 	}
 
@@ -273,9 +271,8 @@ namespace leveldb {
 
 	// 返回LessOrEqual 也就是prev
 	template<typename Key, class Comparator>
-	typename SkipList<Key, Comparator>::Node *
-	SkipList<Key, Comparator>::FindGreaterOrEqual(const Key &key,
-												  Node **prev) const {
+	typename SkipList<Key, Comparator>::Node *SkipList<Key, Comparator>::FindGreaterOrEqual(const Key &key
+			, Node **prev) const {
 		Node *x = head_;
 		int level = GetMaxHeight() - 1;
 		//从高到低往下跳, 寻找每一层的prev节点，
@@ -299,8 +296,7 @@ namespace leveldb {
 	}
 
 	template<typename Key, class Comparator>
-	typename SkipList<Key, Comparator>::Node *
-	SkipList<Key, Comparator>::FindLessThan(const Key &key) const {
+	typename SkipList<Key, Comparator>::Node *SkipList<Key, Comparator>::FindLessThan(const Key &key) const {
 		Node *x = head_;
 		int level = GetMaxHeight() - 1;
 		while (true) {
@@ -320,8 +316,7 @@ namespace leveldb {
 	}
 
 	template<typename Key, class Comparator>
-	typename SkipList<Key, Comparator>::Node *SkipList<Key, Comparator>::FindLast()
-	const {
+	typename SkipList<Key, Comparator>::Node *SkipList<Key, Comparator>::FindLast() const {
 		Node *x = head_;
 		int level = GetMaxHeight() - 1;
 		while (true) {
@@ -341,11 +336,7 @@ namespace leveldb {
 
 	template<typename Key, class Comparator>
 	SkipList<Key, Comparator>::SkipList(Comparator cmp, Arena *arena)
-			: compare_(cmp),
-			  arena_(arena),
-			  head_(NewNode(0 /* any key will do */, kMaxHeight)),
-			  max_height_(1),
-			  rnd_(0xdeadbeef) {
+			: compare_(cmp), arena_(arena), head_(NewNode(0 /* any key will do */, kMaxHeight)), max_height_(1), rnd_(0xdeadbeef) {
 		for (int i = 0; i < kMaxHeight; i++) {
 			// 初始化各层指针
 			head_->SetNext(i, nullptr);

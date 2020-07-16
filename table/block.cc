@@ -23,9 +23,7 @@ namespace leveldb {
 	}
 
 	Block::Block(const BlockContents &contents)
-			: data_(contents.data.data()),
-			  size_(contents.data.size()),
-			  owned_(contents.heap_allocated) {
+			: data_(contents.data.data()), size_(contents.data.size()), owned_(contents.heap_allocated) {
 		if (size_ < sizeof(uint32_t)) {
 			size_ = 0;  // Error marker
 		} else {
@@ -53,9 +51,8 @@ namespace leveldb {
 	// If any errors are detected, returns nullptr.  Otherwise, returns a
 	// pointer to the key delta (just past the three decoded values).
 	// 解析单条数据 shared len|non_shared len|value len|non_shared key|value
-	static inline const char *DecodeEntry(const char *p, const char *limit,
-										  uint32_t *shared, uint32_t *non_shared,
-										  uint32_t *value_length) {
+	static inline const char *DecodeEntry(const char *p, const char *limit, uint32_t *shared, uint32_t *non_shared
+			, uint32_t *value_length) {
 		if (limit - p < 3) return nullptr;
 		*shared = reinterpret_cast<const uint8_t *>(p)[0];
 		*non_shared = reinterpret_cast<const uint8_t *>(p)[1];
@@ -115,14 +112,8 @@ namespace leveldb {
 		}
 
 	public:
-		Iter(const Comparator *comparator, const char *data, uint32_t restarts,
-			 uint32_t num_restarts)
-				: comparator_(comparator),
-				  data_(data),
-				  restarts_(restarts),
-				  num_restarts_(num_restarts),
-				  current_(restarts_),
-				  restart_index_(num_restarts_) {
+		Iter(const Comparator *comparator, const char *data, uint32_t restarts, uint32_t num_restarts)
+				: comparator_(comparator), data_(data), restarts_(restarts), num_restarts_(num_restarts), current_(restarts_), restart_index_(num_restarts_) {
 			assert(num_restarts_ > 0);
 		}
 
@@ -177,9 +168,8 @@ namespace leveldb {
 				uint32_t mid = (left + right + 1) / 2;
 				uint32_t region_offset = GetRestartPoint(mid);
 				uint32_t shared, non_shared, value_length;
-				const char *key_ptr =
-						DecodeEntry(data_ + region_offset, data_ + restarts_, &shared,
-									&non_shared, &value_length);
+				const char *key_ptr = DecodeEntry(
+						data_ + region_offset, data_ + restarts_, &shared, &non_shared, &value_length);
 				if (key_ptr == nullptr || (shared != 0)) {
 					CorruptionError();
 					return;
@@ -251,8 +241,7 @@ namespace leveldb {
 				key_.resize(shared);
 				key_.append(p, non_shared);
 				value_ = Slice(p + non_shared, value_length);
-				while (restart_index_ + 1 < num_restarts_ &&
-					   GetRestartPoint(restart_index_ + 1) < current_) {
+				while (restart_index_ + 1 < num_restarts_ && GetRestartPoint(restart_index_ + 1) < current_) {
 					++restart_index_;
 				}
 				return true;

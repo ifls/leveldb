@@ -115,8 +115,7 @@ namespace leveldb {
 			iter.SeekToLast();
 
 			// Compare against model iterator
-			for (std::set<Key>::reverse_iterator model_iter = keys.rbegin();
-				 model_iter != keys.rend(); ++model_iter) {
+			for (std::set<Key>::reverse_iterator model_iter = keys.rbegin(); model_iter != keys.rend(); ++model_iter) {
 				ASSERT_TRUE(iter.Valid());
 				ASSERT_EQ(*model_iter, iter.key());
 				iter.Prev();
@@ -254,10 +253,9 @@ namespace leveldb {
 
 					// Note that generation 0 is never inserted, so it is ok if
 					// <*,0,*> is missing.
-					ASSERT_TRUE((gen(pos) == 0) ||
-								(gen(pos) > static_cast<Key>(initial_state.Get(key(pos)))))
-												<< "key: " << key(pos) << "; gen: " << gen(pos)
-												<< "; initgen: " << initial_state.Get(key(pos));
+					ASSERT_TRUE((gen(pos) == 0) || (gen(pos) > static_cast<Key>(initial_state.Get(key(pos)))))
+												<< "key: " << key(pos) << "; gen: " << gen(pos) << "; initgen: "
+												<< initial_state.Get(key(pos));
 
 					// Advance to next key in the valid key space
 					if (key(pos) < key(current)) {
@@ -309,8 +307,7 @@ namespace leveldb {
 			STARTING, RUNNING, DONE
 		};
 
-		explicit TestState(int s)
-				: seed_(s), quit_flag_(false), state_(STARTING), state_cv_(&mu_) {}
+		explicit TestState(int s) : seed_(s), quit_flag_(false), state_(STARTING), state_cv_(&mu_) {}
 
 		void Wait(ReaderState s) LOCKS_EXCLUDED(mu_) {
 			mu_.Lock();

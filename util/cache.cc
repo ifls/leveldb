@@ -166,8 +166,8 @@ namespace leveldb {
 			void SetCapacity(size_t capacity) { capacity_ = capacity; }
 
 			// Like Cache methods, but with an extra "hash" parameter.
-			Cache::Handle *Insert(const Slice &key, uint32_t hash,
-								  void *value, size_t charge, void (*deleter)(const Slice &key, void *value));
+			Cache::Handle *Insert(const Slice &key, uint32_t hash, void *value, size_t charge, void (*deleter)(
+					const Slice &key, void *value));
 
 			Cache::Handle *Lookup(const Slice &key, uint32_t hash);
 
@@ -284,8 +284,8 @@ namespace leveldb {
 			Unref(reinterpret_cast<LRUHandle *>(handle));
 		}
 
-		Cache::Handle *LRUCache::Insert(const Slice &key, uint32_t hash, void *value, size_t charge,
-										void (*deleter)(const Slice &key, void *value)) {
+		Cache::Handle *LRUCache::Insert(const Slice &key, uint32_t hash, void *value, size_t charge, void (*deleter)(
+				const Slice &key, void *value)) {
 			MutexLock l(&mutex_);
 
 			//构造 Handle 对象
@@ -385,8 +385,8 @@ namespace leveldb {
 
 			~ShardedLRUCache() override {}
 
-			Handle *Insert(const Slice &key, void *value, size_t charge, void (*deleter)(const Slice &key, void
-			*value)) override {
+			Handle *Insert(const Slice &key, void *value, size_t charge, void (*deleter)(const Slice &key
+					, void *value)) override {
 				const uint32_t hash = HashSlice(key);
 				return shard_[Shard(hash)].Insert(key, hash, value, charge, deleter);
 			}

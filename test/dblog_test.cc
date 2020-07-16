@@ -28,9 +28,7 @@ int main() {
 	std::string file_name("log_writer.data");
 
 	leveldb::WritableFile *file;
-	leveldb::Status s = leveldb::Env::Default()->NewWritableFile(
-			file_name,
-			&file);
+	leveldb::Status s = leveldb::Env::Default()->NewWritableFile(file_name, &file);
 
 	leveldb::log::Writer writer(file);
 

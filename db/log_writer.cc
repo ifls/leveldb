@@ -84,8 +84,7 @@ namespace leveldb {
 		}
 
 		//提交物理日志
-		Status Writer::EmitPhysicalRecord(RecordType t, const char *ptr,
-										  size_t length) {
+		Status Writer::EmitPhysicalRecord(RecordType t, const char *ptr, size_t length) {
 			assert(length <= 0xffff);  // Must fit in two bytes
 			assert(block_offset_ + kHeaderSize + length <= kBlockSize);
 

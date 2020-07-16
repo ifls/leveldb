@@ -49,8 +49,7 @@ namespace leveldb {
 	// Return the smallest index i such that files[i]->largest >= key.
 	// Return files.size() if there is no such file.
 	// REQUIRES: "files" contains a sorted list of non-overlapping files.
-	int FindFile(const InternalKeyComparator &icmp,
-				 const std::vector<FileMetaData *> &files, const Slice &key);
+	int FindFile(const InternalKeyComparator &icmp, const std::vector<FileMetaData *> &files, const Slice &key);
 
 	// Returns true iff some file in "files" overlaps the user key range
 	// [*smallest,*largest].
@@ -58,11 +57,8 @@ namespace leveldb {
 	// largest==nullptr represents a key largest than all keys in the DB.
 	// REQUIRES: If disjoint_sorted_files, files[] contains disjoint ranges
 	//           in sorted order.
-	bool SomeFileOverlapsRange(const InternalKeyComparator &icmp,
-							   bool disjoint_sorted_files,
-							   const std::vector<FileMetaData *> &files,
-							   const Slice *smallest_user_key,
-							   const Slice *largest_user_key);
+	bool SomeFileOverlapsRange(const InternalKeyComparator &icmp, bool disjoint_sorted_files
+			, const std::vector<FileMetaData *> &files, const Slice *smallest_user_key, const Slice *largest_user_key);
 
 	// 记录数据库由磁盘上哪些文件构成，去掉旧的文件，
 	// version + version edit == version+1
@@ -101,8 +97,8 @@ namespace leveldb {
 		void Unref();
 
 		void GetOverlappingInputs(int level, const InternalKey *begin,  // nullptr means before all keys
-								  const InternalKey *end,    // nullptr means after all keys
-								  std::vector<FileMetaData *> *inputs);
+				const InternalKey *end,    // nullptr means after all keys
+				std::vector<FileMetaData *> *inputs);
 
 		// Returns true iff some file in the specified level overlaps 在某一层的文件中, key范围是否重叠
 		// some part of [*smallest_user_key,*largest_user_key].
@@ -127,14 +123,7 @@ namespace leveldb {
 		class LevelFileNumIterator;
 
 		explicit Version(VersionSet *vset)
-				: vset_(vset),
-				  next_(this),
-				  prev_(this),
-				  refs_(0),
-				  file_to_compact_(nullptr),
-				  file_to_compact_level_(-1),
-				  compaction_score_(-1),
-				  compaction_level_(-1) {}
+				: vset_(vset), next_(this), prev_(this), refs_(0), file_to_compact_(nullptr), file_to_compact_level_(-1), compaction_score_(-1), compaction_level_(-1) {}
 
 		Version(const Version &) = delete;
 
@@ -148,8 +137,8 @@ namespace leveldb {
 		// If an invocation of func returns false, makes no more calls.
 		//
 		// REQUIRES: user portion of internal_key == user_key.
-		void
-		ForEachOverlapping(Slice user_key, Slice internal_key, void *arg, bool (*func)(void *, int, FileMetaData *));
+		void ForEachOverlapping(Slice user_key, Slice internal_key, void *arg, bool (*func)(void *, int
+				, FileMetaData *));
 
 		VersionSet *vset_;  // 所属的version集合 VersionSet to which this Version belongs
 		Version *next_;     // 双向链表 Next version in linked list
@@ -174,8 +163,8 @@ namespace leveldb {
 	class VersionSet {
 	public:
 		//只有这一个构造函数
-		VersionSet(const std::string &dbname, const Options *options, TableCache *table_cache,
-				   const InternalKeyComparator *);
+		VersionSet(const std::string &dbname, const Options *options, TableCache *table_cache
+				, const InternalKeyComparator *);
 
 		VersionSet(const VersionSet &) = delete;
 
@@ -247,8 +236,7 @@ namespace leveldb {
 		// the specified level.  Returns nullptr if there is nothing in that
 		// level that overlaps the specified range.  Caller should delete
 		// the result.
-		Compaction *CompactRange(int level, const InternalKey *begin,
-								 const InternalKey *end);
+		Compaction *CompactRange(int level, const InternalKey *begin, const InternalKey *end);
 
 		// Return the maximum overlapping data (in bytes) at next level for any
 		// file at a level >= 1.
@@ -293,8 +281,8 @@ namespace leveldb {
 
 		void GetRange(const std::vector<FileMetaData *> &inputs, InternalKey *smallest, InternalKey *largest);
 
-		void GetRange2(const std::vector<FileMetaData *> &inputs1, const std::vector<FileMetaData *> &inputs2,
-					   InternalKey *smallest, InternalKey *largest);
+		void GetRange2(const std::vector<FileMetaData *> &inputs1, const std::vector<FileMetaData *> &inputs2
+				, InternalKey *smallest, InternalKey *largest);
 
 		void SetupOtherInputs(Compaction *c);
 

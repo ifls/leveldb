@@ -51,9 +51,8 @@ namespace leveldb {
 		};
 
 		// Print contents of a log file. (*func)() is called on every record.
-		Status PrintLogContents(Env *env, const std::string &fname,
-								void (*func)(uint64_t, Slice, WritableFile *),
-								WritableFile *dst) {
+		Status PrintLogContents(Env *env, const std::string &fname, void (*func)(uint64_t, Slice, WritableFile *)
+				, WritableFile *dst) {
 			SequentialFile *file;
 			Status s = env->NewSequentialFile(fname, &file);
 			if (!s.ok()) {

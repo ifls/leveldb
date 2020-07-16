@@ -25,18 +25,17 @@
 //   readseq100K   -- read N/1000 100K values in sequential order in async mode
 //   readrand100K  -- read N/1000 100K values in sequential order in async mode
 //   readrandom    -- read N times in random order
-static const char *FLAGS_benchmarks =
-		"fillseq,"
-		"fillseqsync,"
-		"fillrandsync,"
-		"fillrandom,"
-		"overwrite,"
-		"readrandom,"
-		"readseq,"
-		"fillrand100K,"
-		"fillseq100K,"
-		"readseq100K,"
-		"readrand100K,";
+static const char *FLAGS_benchmarks = "fillseq,"
+									  "fillseqsync,"
+									  "fillrandsync,"
+									  "fillrandom,"
+									  "overwrite,"
+									  "readrandom,"
+									  "readseq,"
+									  "fillrand100K,"
+									  "fillseq100K,"
+									  "readseq100K,"
+									  "readrand100K,";
 
 // Number of key/values to place in database
 static int FLAGS_num = 1000000;
@@ -151,39 +150,28 @@ namespace leveldb {
 			const int kKeySize = 16;
 			PrintEnvironment();
 			std::fprintf(stdout, "Keys:       %d bytes each\n", kKeySize);
-			std::fprintf(
-					stdout, "Values:     %d bytes each (%d bytes after compression)\n",
-					FLAGS_value_size,
-					static_cast<int>(FLAGS_value_size * FLAGS_compression_ratio + 0.5));
+			std::fprintf(stdout, "Values:     %d bytes each (%d bytes after compression)\n", FLAGS_value_size, static_cast<int>(
+					FLAGS_value_size * FLAGS_compression_ratio + 0.5));
 			std::fprintf(stdout, "Entries:    %d\n", num_);
-			std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n",
-						 ((static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) /
-						  1048576.0));
-			std::fprintf(
-					stdout, "FileSize:   %.1f MB (estimated)\n",
-					(((kKeySize + FLAGS_value_size * FLAGS_compression_ratio) * num_) /
-					 1048576.0));
+			std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n", (
+					(static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
+			std::fprintf(stdout, "FileSize:   %.1f MB (estimated)\n", (
+					((kKeySize + FLAGS_value_size * FLAGS_compression_ratio) * num_) / 1048576.0));
 			PrintWarnings();
 			std::fprintf(stdout, "------------------------------------------------\n");
 		}
 
 		void PrintWarnings() {
 #if defined(__GNUC__) && !defined(__OPTIMIZE__)
-			std::fprintf(
-					stdout,
-					"WARNING: Optimization is disabled: benchmarks unnecessarily slow\n");
+			std::fprintf(stdout, "WARNING: Optimization is disabled: benchmarks unnecessarily slow\n");
 #endif
 #ifndef NDEBUG
-			std::fprintf(
-					stdout,
-					"WARNING: Assertions are enabled; benchmarks unnecessarily slow\n");
+			std::fprintf(stdout, "WARNING: Assertions are enabled; benchmarks unnecessarily slow\n");
 #endif
 		}
 
 		void PrintEnvironment() {
-			std::fprintf(
-					stderr, "Kyoto Cabinet:    version %s, lib ver %d, lib rev %d\n",
-					kyotocabinet::VERSION, kyotocabinet::LIBVER, kyotocabinet::LIBREV);
+			std::fprintf(stderr, "Kyoto Cabinet:    version %s, lib ver %d, lib rev %d\n", kyotocabinet::VERSION, kyotocabinet::LIBVER, kyotocabinet::LIBREV);
 
 #if defined(__linux)
 			time_t now = time(nullptr);
@@ -270,8 +258,7 @@ namespace leveldb {
 
 			if (bytes_ > 0) {
 				char rate[100];
-				std::snprintf(rate, sizeof(rate), "%6.1f MB/s",
-							  (bytes_ / 1048576.0) / (finish - start_));
+				std::snprintf(rate, sizeof(rate), "%6.1f MB/s", (bytes_ / 1048576.0) / (finish - start_));
 				if (!message_.empty()) {
 					message_ = std::string(rate) + " " + message_;
 				} else {
@@ -279,12 +266,10 @@ namespace leveldb {
 				}
 			}
 
-			std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n",
-						 name.ToString().c_str(), (finish - start_) * 1e6 / done_,
-						 (message_.empty() ? "" : " "), message_.c_str());
+			std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n", name.ToString().c_str(),
+						 (finish - start_) * 1e6 / done_, (message_.empty() ? "" : " "), message_.c_str());
 			if (FLAGS_histogram) {
-				std::fprintf(stdout, "Microseconds per op:\n%s\n",
-							 hist_.ToString().c_str());
+				std::fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
 			}
 			std::fflush(stdout);
 		}
@@ -298,11 +283,8 @@ namespace leveldb {
 		};
 
 		Benchmark()
-				: db_(nullptr),
-				  num_(FLAGS_num),
-				  reads_(FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads),
-				  bytes_(0),
-				  rand_(301) {
+				: db_(nullptr), num_(FLAGS_num), reads_(
+				FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads), bytes_(0), rand_(301) {
 			std::vector<std::string> files;
 			std::string test_dir;
 			Env::Default()->GetTestDirectory(&test_dir);
@@ -385,8 +367,7 @@ namespace leveldb {
 				} else {
 					known = false;
 					if (name != Slice()) {  // No error message for empty name
-						std::fprintf(stderr, "unknown benchmark '%s'\n",
-									 name.ToString().c_str());
+						std::fprintf(stderr, "unknown benchmark '%s'\n", name.ToString().c_str());
 					}
 				}
 				if (known) {
@@ -405,14 +386,11 @@ namespace leveldb {
 			db_num_++;
 			std::string test_dir;
 			Env::Default()->GetTestDirectory(&test_dir);
-			std::snprintf(file_name, sizeof(file_name), "%s/dbbench_polyDB-%d.kct",
-						  test_dir.c_str(), db_num_);
+			std::snprintf(file_name, sizeof(file_name), "%s/dbbench_polyDB-%d.kct", test_dir.c_str(), db_num_);
 
 			// Create tuning options and open the database
-			int open_options =
-					kyotocabinet::PolyDB::OWRITER | kyotocabinet::PolyDB::OCREATE;
-			int tune_options =
-					kyotocabinet::TreeDB::TSMALL | kyotocabinet::TreeDB::TLINEAR;
+			int open_options = kyotocabinet::PolyDB::OWRITER | kyotocabinet::PolyDB::OCREATE;
+			int tune_options = kyotocabinet::TreeDB::TSMALL | kyotocabinet::TreeDB::TLINEAR;
 			if (FLAGS_compression) {
 				tune_options |= kyotocabinet::TreeDB::TCOMPRESS;
 				db_->tune_compressor(&comp_);
@@ -429,8 +407,7 @@ namespace leveldb {
 			}
 		}
 
-		void Write(bool sync, Order order, DBState state, int num_entries,
-				   int value_size, int entries_per_batch) {
+		void Write(bool sync, Order order, DBState state, int num_entries, int value_size, int entries_per_batch) {
 			// Create new database if state == FRESH
 			if (state == FRESH) {
 				if (FLAGS_use_existing_db) {
@@ -498,8 +475,7 @@ int main(int argc, char **argv) {
 			FLAGS_benchmarks = argv[i] + strlen("--benchmarks=");
 		} else if (sscanf(argv[i], "--compression_ratio=%lf%c", &d, &junk) == 1) {
 			FLAGS_compression_ratio = d;
-		} else if (sscanf(argv[i], "--histogram=%d%c", &n, &junk) == 1 &&
-				   (n == 0 || n == 1)) {
+		} else if (sscanf(argv[i], "--histogram=%d%c", &n, &junk) == 1 && (n == 0 || n == 1)) {
 			FLAGS_histogram = n;
 		} else if (sscanf(argv[i], "--num=%d%c", &n, &junk) == 1) {
 			FLAGS_num = n;
@@ -511,8 +487,7 @@ int main(int argc, char **argv) {
 			FLAGS_cache_size = n;
 		} else if (sscanf(argv[i], "--page_size=%d%c", &n, &junk) == 1) {
 			FLAGS_page_size = n;
-		} else if (sscanf(argv[i], "--compression=%d%c", &n, &junk) == 1 &&
-				   (n == 0 || n == 1)) {
+		} else if (sscanf(argv[i], "--compression=%d%c", &n, &junk) == 1 && (n == 0 || n == 1)) {
 			FLAGS_compression = (n == 1) ? true : false;
 		} else if (strncmp(argv[i], "--db=", 5) == 0) {
 			FLAGS_db = argv[i] + 5;

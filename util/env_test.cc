@@ -175,8 +175,7 @@ namespace leveldb {
 		ASSERT_TRUE(!env_->FileExists(non_existent_file));
 
 		RandomAccessFile *random_access_file;
-		Status status =
-				env_->NewRandomAccessFile(non_existent_file, &random_access_file);
+		Status status = env_->NewRandomAccessFile(non_existent_file, &random_access_file);
 		ASSERT_TRUE(status.IsNotFound());
 
 		SequentialFile *sequential_file;

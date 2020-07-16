@@ -67,8 +67,8 @@ namespace leveldb {
 		// Add the specified file at the specified number. 增加新文件
 		// REQUIRES: This version has not been saved (see VersionSet::SaveTo)
 		// REQUIRES: "smallest" and "largest" are smallest and largest keys in file
-		void
-		AddFile(int level, uint64_t file, uint64_t file_size, const InternalKey &smallest, const InternalKey &largest) {
+		void AddFile(int level, uint64_t file, uint64_t file_size, const InternalKey &smallest
+				, const InternalKey &largest) {
 			FileMetaData f;
 			f.number = file;   // 文件序号
 			f.file_size = file_size;

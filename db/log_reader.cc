@@ -16,18 +16,9 @@ namespace leveldb {
 
 		Reader::Reporter::~Reporter() = default;
 
-		Reader::Reader(SequentialFile *file, Reporter *reporter, bool checksum,
-					   uint64_t initial_offset)
-				: file_(file),
-				  reporter_(reporter),
-				  checksum_(checksum),
-				  backing_store_(new char[kBlockSize]),
-				  buffer_(),
-				  eof_(false),
-				  last_record_offset_(0),
-				  end_of_buffer_offset_(0),
-				  initial_offset_(initial_offset),
-				  resyncing_(initial_offset > 0) {}
+		Reader::Reader(SequentialFile *file, Reporter *reporter, bool checksum, uint64_t initial_offset)
+				: file_(file), reporter_(reporter), checksum_(checksum), backing_store_(new char[kBlockSize]), buffer_(), eof_(false), last_record_offset_(0), end_of_buffer_offset_(0), initial_offset_(initial_offset), resyncing_(
+				initial_offset > 0) {}
 
 		Reader::~Reader() { delete[] backing_store_; }
 
@@ -128,8 +119,7 @@ namespace leveldb {
 
 					case kMiddleType:
 						if (!in_fragmented_record) {
-							ReportCorruption(fragment.size(),
-											 "missing start of fragmented record(1)");
+							ReportCorruption(fragment.size(), "missing start of fragmented record(1)");
 						} else {
 							//保存到草稿
 							scratch->append(fragment.data(), fragment.size());
@@ -139,8 +129,7 @@ namespace leveldb {
 
 					case kLastType:
 						if (!in_fragmented_record) {
-							ReportCorruption(fragment.size(),
-											 "missing start of fragmented record(2)");
+							ReportCorruption(fragment.size(), "missing start of fragmented record(2)");
 						} else {
 							scratch->append(fragment.data(), fragment.size());
 							*record = Slice(*scratch);  //多块拼接的记录
@@ -170,9 +159,7 @@ namespace leveldb {
 						char buf[40];
 						std::snprintf(buf, sizeof(buf), "unknown record type %u", record_type);
 						//报告数据损坏
-						ReportCorruption(
-								(fragment.size() + (in_fragmented_record ? scratch->size() : 0)),
-								buf);
+						ReportCorruption((fragment.size() + (in_fragmented_record ? scratch->size() : 0)), buf);
 						in_fragmented_record = false;
 						scratch->clear();
 						break;
@@ -189,8 +176,7 @@ namespace leveldb {
 		}
 
 		void Reader::ReportDrop(uint64_t bytes, const Status &reason) {
-			if (reporter_ != nullptr &&
-				end_of_buffer_offset_ - buffer_.size() - bytes >= initial_offset_) {
+			if (reporter_ != nullptr && end_of_buffer_offset_ - buffer_.size() - bytes >= initial_offset_) {
 				reporter_->Corruption(static_cast<size_t>(bytes), reason);
 			}
 		}
@@ -270,8 +256,7 @@ namespace leveldb {
 				buffer_.remove_prefix(kHeaderSize + length);
 
 				// Skip physical record that started before initial_offset_
-				if (end_of_buffer_offset_ - buffer_.size() - kHeaderSize - length <
-					initial_offset_) {
+				if (end_of_buffer_offset_ - buffer_.size() - kHeaderSize - length < initial_offset_) {
 					result->clear();
 					return kBadRecord;
 				}

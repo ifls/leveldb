@@ -36,8 +36,7 @@ namespace leveldb {
 				key_slices.push_back(Slice(keys_[i]));
 			}
 			filter_.clear();
-			policy_->CreateFilter(&key_slices[0], static_cast<int>(key_slices.size()),
-								  &filter_);
+			policy_->CreateFilter(&key_slices[0], static_cast<int>(key_slices.size()), &filter_);
 			keys_.clear();
 			if (kVerbose >= 2) DumpFilter();
 		}
@@ -120,20 +119,17 @@ namespace leveldb {
 			}
 			Build();
 
-			ASSERT_LE(FilterSize(), static_cast<size_t>((length * 10 / 8) + 40))
-										<< length;
+			ASSERT_LE(FilterSize(), static_cast<size_t>((length * 10 / 8) + 40)) << length;
 
 			// All added keys must match
 			for (int i = 0; i < length; i++) {
-				ASSERT_TRUE(Matches(Key(i, buffer)))
-											<< "Length " << length << "; key " << i;
+				ASSERT_TRUE(Matches(Key(i, buffer))) << "Length " << length << "; key " << i;
 			}
 
 			// Check false positive rate
 			double rate = FalsePositiveRate();
 			if (kVerbose >= 1) {
-				std::fprintf(stderr,
-							 "False positives: %5.2f%% @ length = %6d ; bytes = %6d\n",
+				std::fprintf(stderr, "False positives: %5.2f%% @ length = %6d ; bytes = %6d\n",
 							 rate * 100.0, length, static_cast<int>(FilterSize()));
 			}
 			ASSERT_LE(rate, 0.02);  // Must not be over 2%
@@ -143,8 +139,7 @@ namespace leveldb {
 				good_filters++;
 		}
 		if (kVerbose >= 1) {
-			std::fprintf(stderr, "Filters: %d good, %d mediocre\n", good_filters,
-						 mediocre_filters);
+			std::fprintf(stderr, "Filters: %d good, %d mediocre\n", good_filters, mediocre_filters);
 		}
 		ASSERT_LE(mediocre_filters, good_filters / 5);
 	}

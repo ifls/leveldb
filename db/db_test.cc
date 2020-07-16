@@ -32,9 +32,8 @@ namespace leveldb {
 	}
 
 	static std::string RandomKey(Random *rnd) {
-		int len =
-				(rnd->OneIn(3) ? 1  // Short sometimes to encourage collisions
-							   : (rnd->OneIn(100) ? rnd->Skewed(10) : rnd->Uniform(10)));
+		int len = (rnd->OneIn(3) ? 1  // Short sometimes to encourage collisions
+								 : (rnd->OneIn(100) ? rnd->Skewed(10) : rnd->Uniform(10)));
 		return test::RandomKey(rnd, len);
 	}
 
@@ -77,8 +76,7 @@ namespace leveldb {
 
 		void SetIgnoreDotFiles(bool ignored) { ignore_dot_files_ = ignored; }
 
-		Status GetChildren(const std::string &dir,
-						   std::vector<std::string> *result) override {
+		Status GetChildren(const std::string &dir, std::vector<std::string> *result) override {
 			Status s = target()->GetChildren(dir, result);
 			if (!s.ok() || !ignore_dot_files_) {
 				return s;
@@ -125,14 +123,7 @@ namespace leveldb {
 		AtomicCounter random_read_counter_;
 
 		explicit SpecialEnv(Env *base)
-				: EnvWrapper(base),
-				  delay_data_sync_(false),
-				  data_sync_error_(false),
-				  no_space_(false),
-				  non_writable_(false),
-				  manifest_sync_error_(false),
-				  manifest_write_error_(false),
-				  count_random_reads_(false) {}
+				: EnvWrapper(base), delay_data_sync_(false), data_sync_error_(false), no_space_(false), non_writable_(false), manifest_sync_error_(false), manifest_write_error_(false), count_random_reads_(false) {}
 
 		Status NewWritableFile(const std::string &f, WritableFile **r) {
 			class DataFile : public WritableFile {
@@ -205,8 +196,7 @@ namespace leveldb {
 
 			Status s = target()->NewWritableFile(f, r);
 			if (s.ok()) {
-				if (strstr(f.c_str(), ".ldb") != nullptr ||
-					strstr(f.c_str(), ".log") != nullptr) {
+				if (strstr(f.c_str(), ".ldb") != nullptr || strstr(f.c_str(), ".log") != nullptr) {
 					*r = new DataFile(this, *r);
 				} else if (strstr(f.c_str(), "MANIFEST") != nullptr) {
 					*r = new ManifestFile(this, *r);
@@ -222,13 +212,11 @@ namespace leveldb {
 				AtomicCounter *counter_;
 
 			public:
-				CountingFile(RandomAccessFile *target, AtomicCounter *counter)
-						: target_(target), counter_(counter) {}
+				CountingFile(RandomAccessFile *target, AtomicCounter *counter) : target_(target), counter_(counter) {}
 
 				~CountingFile() override { delete target_; }
 
-				Status Read(uint64_t offset, size_t n, Slice *result,
-							char *scratch) const override {
+				Status Read(uint64_t offset, size_t n, Slice *result, char *scratch) const override {
 					counter_->Increment();
 					return target_->Read(offset, n, result, scratch);
 				}
@@ -420,8 +408,7 @@ namespace leveldb {
 
 		int NumTableFilesAtLevel(int level) {
 			std::string property;
-			EXPECT_TRUE(db_->GetProperty(
-					"leveldb.num-files-at-level" + NumberToString(level), &property));
+			EXPECT_TRUE(db_->GetProperty("leveldb.num-files-at-level" + NumberToString(level), &property));
 			return std::stoi(property);
 		}
 
@@ -469,8 +456,7 @@ namespace leveldb {
 
 		// Do n memtable compactions, each of which produces an sstable
 		// covering the range [small_key,large_key].
-		void MakeTables(int n, const std::string &small_key,
-						const std::string &large_key) {
+		void MakeTables(int n, const std::string &small_key, const std::string &large_key) {
 			for (int i = 0; i < n; i++) {
 				Put(small_key, "begin");
 				Put(large_key, "end");
@@ -486,9 +472,7 @@ namespace leveldb {
 
 		void DumpFileCounts(const char *label) {
 			std::fprintf(stderr, "---\n%s:\n", label);
-			std::fprintf(
-					stderr, "maxoverlap: %lld\n",
-					static_cast<long long>(dbfull()->TEST_MaxNextLevelOverlappingBytes()));
+			std::fprintf(stderr, "maxoverlap: %lld\n", static_cast<long long>(dbfull()->TEST_MaxNextLevelOverlappingBytes()));
 			for (int level = 0; level < config::kNumLevels; level++) {
 				int num = NumTableFilesAtLevel(level);
 				if (num > 0) {
@@ -1026,10 +1010,8 @@ namespace leveldb {
 
 			// Trigger a long memtable compaction and reopen the database during it
 			ASSERT_LEVELDB_OK(Put("foo", "v1"));  // Goes to 1st log file
-			ASSERT_LEVELDB_OK(
-					Put("big1", std::string(10000000, 'x')));  // Fills memtable
-			ASSERT_LEVELDB_OK(
-					Put("big2", std::string(1000, 'y')));  // Triggers compaction
+			ASSERT_LEVELDB_OK(Put("big1", std::string(10000000, 'x')));  // Fills memtable
+			ASSERT_LEVELDB_OK(Put("big2", std::string(1000, 'y')));  // Triggers compaction
 			ASSERT_LEVELDB_OK(Put("bar", "v2"));       // Goes to new log file
 
 			Reopen(&options);
@@ -1183,9 +1165,7 @@ namespace leveldb {
 	static bool Between(uint64_t val, uint64_t low, uint64_t high) {
 		bool result = (val >= low) && (val <= high);
 		if (!result) {
-			std::fprintf(stderr, "Value %llu is not in range [%llu, %llu]\n",
-						 (unsigned long long) (val), (unsigned long long) (low),
-						 (unsigned long long) (high));
+			std::fprintf(stderr, "Value %llu is not in range [%llu, %llu]\n", (unsigned long long) (val), (unsigned long long) (low), (unsigned long long) (high));
 		}
 		return result;
 	}
@@ -1229,8 +1209,7 @@ namespace leveldb {
 				for (int compact_start = 0; compact_start < N; compact_start += 10) {
 					for (int i = 0; i < N; i += 10) {
 						ASSERT_TRUE(Between(Size("", Key(i)), S1 * i, S2 * i));
-						ASSERT_TRUE(Between(Size("", Key(i) + ".suffix"), S1 * (i + 1),
-											S2 * (i + 1)));
+						ASSERT_TRUE(Between(Size("", Key(i) + ".suffix"), S1 * (i + 1), S2 * (i + 1)));
 						ASSERT_TRUE(Between(Size(Key(i), Key(i + 10)), S1 * 10, S2 * 10));
 					}
 					ASSERT_TRUE(Between(Size("", Key(50)), S1 * 50, S2 * 50));
@@ -1301,8 +1280,7 @@ namespace leveldb {
 		// Write to force compactions
 		Put("foo", "newvalue1");
 		for (int i = 0; i < 100; i++) {
-			ASSERT_LEVELDB_OK(
-					Put(Key(i), Key(i) + std::string(100000, 'v')));  // 100K values
+			ASSERT_LEVELDB_OK(Put(Key(i), Key(i) + std::string(100000, 'v')));  // 100K values
 		}
 		Put("foo", "newvalue2");
 
@@ -1546,8 +1524,7 @@ namespace leveldb {
 		new_options.comparator = &cmp;
 		Status s = TryReopen(&new_options);
 		ASSERT_TRUE(!s.ok());
-		ASSERT_TRUE(s.ToString().find("comparator") != std::string::npos)
-									<< s.ToString();
+		ASSERT_TRUE(s.ToString().find("comparator") != std::string::npos) << s.ToString();
 	}
 
 	TEST_F(DBTest, CustomComparator) {
@@ -1571,12 +1548,10 @@ namespace leveldb {
 		private:
 			static int ToNumber(const Slice &x) {
 				// Check that there are no extra characters.
-				EXPECT_TRUE(x.size() >= 2 && x[0] == '[' && x[x.size() - 1] == ']')
-									<< EscapeString(x);
+				EXPECT_TRUE(x.size() >= 2 && x[0] == '[' && x[x.size() - 1] == ']') << EscapeString(x);
 				int val;
 				char ignored;
-				EXPECT_TRUE(sscanf(x.ToString().c_str(), "[%i]%c", &val, &ignored) == 1)
-									<< EscapeString(x);
+				EXPECT_TRUE(sscanf(x.ToString().c_str(), "[%i]%c", &val, &ignored) == 1) << EscapeString(x);
 				return val;
 			}
 		};
@@ -1610,8 +1585,7 @@ namespace leveldb {
 	}
 
 	TEST_F(DBTest, ManualCompaction) {
-		ASSERT_EQ(config::kMaxMemCompactLevel, 2)
-									<< "Need to update this test to match kMaxMemCompactLevel";
+		ASSERT_EQ(config::kMaxMemCompactLevel, 2) << "Need to update this test to match kMaxMemCompactLevel";
 
 		MakeTables(3, "p", "q");
 		ASSERT_EQ("1,1,1", FilesPerLevel());
@@ -1823,8 +1797,7 @@ namespace leveldb {
 		// We iterate twice.  In the second iteration, everything is the
 		// same except the log record never makes it to the MANIFEST file.
 		for (int iter = 0; iter < 2; iter++) {
-			std::atomic<bool> *error_type = (iter == 0) ? &env_->manifest_sync_error_
-														: &env_->manifest_write_error_;
+			std::atomic<bool> *error_type = (iter == 0) ? &env_->manifest_sync_error_ : &env_->manifest_write_error_;
 
 			// Insert foo=>bar mapping
 			Options options = CurrentOptions();
@@ -1982,8 +1955,7 @@ namespace leveldb {
 				if (rnd.OneIn(2)) {
 					// Write values of the form <key, my id, counter>.
 					// We add some padding for force compactions.
-					std::snprintf(valbuf, sizeof(valbuf), "%d.%d.%-1000d", key, id,
-								  static_cast<int>(counter));
+					std::snprintf(valbuf, sizeof(valbuf), "%d.%d.%-1000d", key, id, static_cast<int>(counter));
 					ASSERT_LEVELDB_OK(db->Put(WriteOptions(), Slice(keybuf), Slice(valbuf)));
 				} else {
 					// Read a value and verify that it matches the pattern written above.
@@ -2064,8 +2036,7 @@ namespace leveldb {
 			return DB::Delete(o, key);
 		}
 
-		Status Get(const ReadOptions &options, const Slice &key,
-				   std::string *value) override {
+		Status Get(const ReadOptions &options, const Slice &key, std::string *value) override {
 			assert(false);  // Not implemented
 			return Status::NotFound(key);
 		}
@@ -2076,8 +2047,7 @@ namespace leveldb {
 				*saved = map_;
 				return new ModelIter(saved, true);
 			} else {
-				const KVMap *snapshot_state =
-						&(reinterpret_cast<const ModelSnapshot *>(options.snapshot)->map_);
+				const KVMap *snapshot_state = &(reinterpret_cast<const ModelSnapshot *>(options.snapshot)->map_);
 				return new ModelIter(snapshot_state, false);
 			}
 		}
@@ -2123,8 +2093,7 @@ namespace leveldb {
 	private:
 		class ModelIter : public Iterator {
 		public:
-			ModelIter(const KVMap *map, bool owned)
-					: map_(map), owned_(owned), iter_(map_->end()) {}
+			ModelIter(const KVMap *map, bool owned) : map_(map), owned_(owned), iter_(map_->end()) {}
 
 			~ModelIter() override {
 				if (owned_) delete map_;
@@ -2166,9 +2135,7 @@ namespace leveldb {
 		KVMap map_;
 	};
 
-	static bool CompareIterators(int step, DB *model, DB *db,
-								 const Snapshot *model_snap,
-								 const Snapshot *db_snap) {
+	static bool CompareIterators(int step, DB *model, DB *db, const Snapshot *model_snap, const Snapshot *db_snap) {
 		ReadOptions options;
 		options.snapshot = model_snap;
 		Iterator *miter = model->NewIterator(options);
@@ -2180,27 +2147,20 @@ namespace leveldb {
 			 ok && miter->Valid() && dbiter->Valid(); miter->Next(), dbiter->Next()) {
 			count++;
 			if (miter->key().compare(dbiter->key()) != 0) {
-				std::fprintf(stderr, "step %d: Key mismatch: '%s' vs. '%s'\n", step,
-							 EscapeString(miter->key()).c_str(),
-							 EscapeString(dbiter->key()).c_str());
+				std::fprintf(stderr, "step %d: Key mismatch: '%s' vs. '%s'\n", step, EscapeString(miter->key()).c_str(), EscapeString(dbiter->key()).c_str());
 				ok = false;
 				break;
 			}
 
 			if (miter->value().compare(dbiter->value()) != 0) {
-				std::fprintf(stderr,
-							 "step %d: Value mismatch for key '%s': '%s' vs. '%s'\n",
-							 step, EscapeString(miter->key()).c_str(),
-							 EscapeString(miter->value()).c_str(),
-							 EscapeString(miter->value()).c_str());
+				std::fprintf(stderr, "step %d: Value mismatch for key '%s': '%s' vs. '%s'\n", step, EscapeString(miter->key()).c_str(), EscapeString(miter->value()).c_str(), EscapeString(miter->value()).c_str());
 				ok = false;
 			}
 		}
 
 		if (ok) {
 			if (miter->Valid() != dbiter->Valid()) {
-				std::fprintf(stderr, "step %d: Mismatch at end of iterators: %d vs. %d\n",
-							 step, miter->Valid(), dbiter->Valid());
+				std::fprintf(stderr, "step %d: Mismatch at end of iterators: %d vs. %d\n", step, miter->Valid(), dbiter->Valid());
 				ok = false;
 			}
 		}
@@ -2226,8 +2186,7 @@ namespace leveldb {
 				int p = rnd.Uniform(100);
 				if (p < 45) {  // Put
 					k = RandomKey(&rnd);
-					v = RandomString(
-							&rnd, rnd.OneIn(20) ? 100 + rnd.Uniform(100) : rnd.Uniform(8));
+					v = RandomString(&rnd, rnd.OneIn(20) ? 100 + rnd.Uniform(100) : rnd.Uniform(8));
 					ASSERT_LEVELDB_OK(model.Put(WriteOptions(), k, v));
 					ASSERT_LEVELDB_OK(db_->Put(WriteOptions(), k, v));
 
@@ -2331,9 +2290,8 @@ namespace leveldb {
 		unsigned int us = stop_micros - start_micros;
 		char buf[16];
 		std::snprintf(buf, sizeof(buf), "%d", num_base_files);
-		std::fprintf(stderr,
-					 "BM_LogAndApply/%-6s   %8d iters : %9u us (%7.0f us / iter)\n",
-					 buf, iters, us, ((float) us) / iters);
+		std::fprintf(stderr, "BM_LogAndApply/%-6s   %8d iters : %9u us (%7.0f us / iter)\n", buf, iters, us,
+					 ((float) us) / iters);
 	}
 
 }  // namespace leveldb

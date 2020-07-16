@@ -45,14 +45,9 @@ namespace leveldb {
 		class Repairer {
 		public:
 			Repairer(const std::string &dbname, const Options &options)
-					: dbname_(dbname),
-					  env_(options.env),
-					  icmp_(options.comparator),
-					  ipolicy_(options.filter_policy),
-					  options_(SanitizeOptions(dbname, &icmp_, &ipolicy_, options)),
-					  owns_info_log_(options_.info_log != options.info_log),
-					  owns_cache_(options_.block_cache != options.block_cache),
-					  next_file_number_(1) {
+					: dbname_(dbname), env_(options.env), icmp_(options.comparator), ipolicy_(options.filter_policy), options_(SanitizeOptions(dbname, &icmp_, &ipolicy_, options)), owns_info_log_(
+					options_.info_log != options.info_log), owns_cache_(
+					options_.block_cache != options.block_cache), next_file_number_(1) {
 				// TableCache can be small since we expect each table to be opened once.
 				table_cache_ = new TableCache(dbname_, options_, 10);
 			}
@@ -80,12 +75,10 @@ namespace leveldb {
 					for (size_t i = 0; i < tables_.size(); i++) {
 						bytes += tables_[i].meta.file_size;
 					}
-					Log(options_.info_log,
-						"**** Repaired leveldb %s; "
-						"recovered %d files; %llu bytes. "
-						"Some data may have been lost. "
-						"****",
-						dbname_.c_str(), static_cast<int>(tables_.size()), bytes);
+					Log(options_.info_log, "**** Repaired leveldb %s; "
+										   "recovered %d files; %llu bytes. "
+										   "Some data may have been lost. "
+										   "****", dbname_.c_str(), static_cast<int>(tables_.size()), bytes);
 				}
 				return status;
 			}
@@ -134,8 +127,7 @@ namespace leveldb {
 					std::string logname = LogFileName(dbname_, logs_[i]);
 					Status status = ConvertLogToTable(logs_[i]);
 					if (!status.ok()) {
-						Log(options_.info_log, "Log #%llu: ignoring conversion error: %s",
-							(unsigned long long) logs_[i], status.ToString().c_str());
+						Log(options_.info_log, "Log #%llu: ignoring conversion error: %s", (unsigned long long) logs_[i], status.ToString().c_str());
 					}
 					ArchiveFile(logname);
 				}
@@ -149,9 +141,7 @@ namespace leveldb {
 
 					void Corruption(size_t bytes, const Status &s) override {
 						// We print error messages for corruption, but continue repairing.
-						Log(info_log, "Log #%llu: dropping %d bytes; %s",
-							(unsigned long long) lognum, static_cast<int>(bytes),
-							s.ToString().c_str());
+						Log(info_log, "Log #%llu: dropping %d bytes; %s", (unsigned long long) lognum, static_cast<int>(bytes), s.ToString().c_str());
 					}
 				};
 
@@ -172,8 +162,7 @@ namespace leveldb {
 				// corruptions cause entire commits to be skipped instead of
 				// propagating bad information (like overly large sequence
 				// numbers).
-				log::Reader reader(lfile, &reporter, false /*do not checksum*/,
-								   0 /*initial_offset*/);
+				log::Reader reader(lfile, &reporter, false /*do not checksum*/, 0 /*initial_offset*/);
 
 				// Read all the records and add to a memtable
 				std::string scratch;
@@ -184,8 +173,7 @@ namespace leveldb {
 				int counter = 0;
 				while (reader.ReadRecord(&record, &scratch)) {
 					if (record.size() < 12) {
-						reporter.Corruption(record.size(),
-											Status::Corruption("log record too small"));
+						reporter.Corruption(record.size(), Status::Corruption("log record too small"));
 						continue;
 					}
 					WriteBatchInternal::SetContents(&batch, record);
@@ -193,8 +181,7 @@ namespace leveldb {
 					if (status.ok()) {
 						counter += WriteBatchInternal::Count(&batch);
 					} else {
-						Log(options_.info_log, "Log #%llu: ignoring %s",
-							(unsigned long long) log, status.ToString().c_str());
+						Log(options_.info_log, "Log #%llu: ignoring %s", (unsigned long long) log, status.ToString().c_str());
 						status = Status::OK();  // Keep going with rest of file
 					}
 				}
@@ -214,9 +201,7 @@ namespace leveldb {
 						table_numbers_.push_back(meta.number);
 					}
 				}
-				Log(options_.info_log, "Log #%llu: %d ops saved to Table #%llu %s",
-					(unsigned long long) log, counter, (unsigned long long) meta.number,
-					status.ToString().c_str());
+				Log(options_.info_log, "Log #%llu: %d ops saved to Table #%llu %s", (unsigned long long) log, counter, (unsigned long long) meta.number, status.ToString().c_str());
 				return status;
 			}
 
@@ -250,8 +235,7 @@ namespace leveldb {
 				if (!status.ok()) {
 					ArchiveFile(TableFileName(dbname_, number));
 					ArchiveFile(SSTTableFileName(dbname_, number));
-					Log(options_.info_log, "Table #%llu: dropped: %s",
-						(unsigned long long) t.meta.number, status.ToString().c_str());
+					Log(options_.info_log, "Table #%llu: dropped: %s", (unsigned long long) t.meta.number, status.ToString().c_str());
 					return;
 				}
 
@@ -264,8 +248,7 @@ namespace leveldb {
 				for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
 					Slice key = iter->key();
 					if (!ParseInternalKey(key, &parsed)) {
-						Log(options_.info_log, "Table #%llu: unparsable key %s",
-							(unsigned long long) t.meta.number, EscapeString(key).c_str());
+						Log(options_.info_log, "Table #%llu: unparsable key %s", (unsigned long long) t.meta.number, EscapeString(key).c_str());
 						continue;
 					}
 
@@ -283,8 +266,7 @@ namespace leveldb {
 					status = iter->status();
 				}
 				delete iter;
-				Log(options_.info_log, "Table #%llu: %d entries %s",
-					(unsigned long long) t.meta.number, counter, status.ToString().c_str());
+				Log(options_.info_log, "Table #%llu: %d entries %s", (unsigned long long) t.meta.number, counter, status.ToString().c_str());
 
 				if (status.ok()) {
 					tables_.push_back(t);
@@ -338,8 +320,7 @@ namespace leveldb {
 					std::string orig = TableFileName(dbname_, t.meta.number);
 					s = env_->RenameFile(copy, orig);
 					if (s.ok()) {
-						Log(options_.info_log, "Table #%llu: %d entries repaired",
-							(unsigned long long) t.meta.number, counter);
+						Log(options_.info_log, "Table #%llu: %d entries repaired", (unsigned long long) t.meta.number, counter);
 						tables_.push_back(t);
 					}
 				}
@@ -422,8 +403,7 @@ namespace leveldb {
 				new_file.append("/");
 				new_file.append((slash == nullptr) ? fname.c_str() : slash + 1);
 				Status s = env_->RenameFile(fname, new_file);
-				Log(options_.info_log, "Archiving %s: %s\n", fname.c_str(),
-					s.ToString().c_str());
+				Log(options_.info_log, "Archiving %s: %s\n", fname.c_str(), s.ToString().c_str());
 			}
 
 			const std::string dbname_;

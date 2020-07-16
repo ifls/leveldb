@@ -183,8 +183,7 @@ namespace leveldb {
 
 				case kNewFile:
 					if (GetLevel(&input, &level) && GetVarint64(&input, &f.number) &&
-						GetVarint64(&input, &f.file_size) &&
-						GetInternalKey(&input, &f.smallest) &&
+						GetVarint64(&input, &f.file_size) && GetInternalKey(&input, &f.smallest) &&
 						GetInternalKey(&input, &f.largest)) {
 						new_files_.push_back(std::make_pair(level, f));
 					} else {

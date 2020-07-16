@@ -42,10 +42,8 @@ namespace leveldb {
 }  // namespace leveldb
 
 static void Usage() {
-	std::fprintf(
-			stderr,
-			"Usage: leveldbutil command...\n"
-			"   dump files...         -- dump contents of specified files\n");
+	std::fprintf(stderr, "Usage: leveldbutil command...\n"
+						 "   dump files...         -- dump contents of specified files\n");
 }
 
 int main(int argc, char **argv) {

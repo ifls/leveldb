@@ -44,8 +44,7 @@ namespace leveldb {
 		bool delete_before_put = false;
 		bool keep_snapshots = true;
 
-		std::vector<std::unique_ptr<std::pair<std::string, std::string>>> test_map(
-				10000);
+		std::vector<std::unique_ptr<std::pair<std::string, std::string>>> test_map(10000);
 		std::vector<Snapshot const *> snapshots(100, nullptr);
 
 		DB *db;
@@ -73,20 +72,16 @@ namespace leveldb {
 
 			if (test_map[index] == nullptr) {
 				num_items++;
-				test_map[index].reset(new std::pair<std::string, std::string>(
-						CreateRandomString(index), CreateRandomString(index)));
+				test_map[index].reset(new std::pair<std::string, std::string>(CreateRandomString(index), CreateRandomString(index)));
 				batch.Put(test_map[index]->first, test_map[index]->second);
 			} else {
-				ASSERT_LEVELDB_OK(
-						db->Get(readOptions, test_map[index]->first, &old_value));
+				ASSERT_LEVELDB_OK(db->Get(readOptions, test_map[index]->first, &old_value));
 				if (old_value != test_map[index]->second) {
 					std::cout << "ERROR incorrect value returned by Get" << std::endl;
 					std::cout << "  count=" << count << std::endl;
 					std::cout << "  old value=" << old_value << std::endl;
-					std::cout << "  test_map[index]->second=" << test_map[index]->second
-							  << std::endl;
-					std::cout << "  test_map[index]->first=" << test_map[index]->first
-							  << std::endl;
+					std::cout << "  test_map[index]->second=" << test_map[index]->second << std::endl;
+					std::cout << "  test_map[index]->first=" << test_map[index]->first << std::endl;
 					std::cout << "  index=" << index << std::endl;
 					ASSERT_EQ(old_value, test_map[index]->second);
 				}

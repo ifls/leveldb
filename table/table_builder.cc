@@ -20,18 +20,9 @@ namespace leveldb {
 
 	struct TableBuilder::Rep {
 		Rep(const Options &opt, WritableFile *f)
-				: options(opt),
-				  index_block_options(opt),
-				  file(f),
-				  offset(0),
-				  data_block(&options),
-				  index_block(&index_block_options),
-				  num_entries(0),
-				  closed(false),
-				  filter_block(opt.filter_policy == nullptr
-							   ? nullptr
-							   : new FilterBlockBuilder(opt.filter_policy)),
-				  pending_index_entry(false) {
+				: options(opt), index_block_options(opt), file(f), offset(0), data_block(&options), index_block(&index_block_options), num_entries(0), closed(false), filter_block(
+				opt.filter_policy == nullptr ? nullptr
+											 : new FilterBlockBuilder(opt.filter_policy)), pending_index_entry(false) {
 			index_block_options.block_restart_interval = 1;
 		}
 
@@ -62,8 +53,7 @@ namespace leveldb {
 		std::string compressed_output;
 	};
 
-	TableBuilder::TableBuilder(const Options &options, WritableFile *file)
-			: rep_(new Rep(options, file)) {
+	TableBuilder::TableBuilder(const Options &options, WritableFile *file) : rep_(new Rep(options, file)) {
 		if (rep_->filter_block != nullptr) {
 			rep_->filter_block->StartBlock(0);
 		}
@@ -180,8 +170,7 @@ namespace leveldb {
 	}
 
 	// 写一块 data block 到 sst文件, 并返回句柄
-	void TableBuilder::WriteRawBlock(const Slice &block_contents,
-									 CompressionType type, BlockHandle *handle) {
+	void TableBuilder::WriteRawBlock(const Slice &block_contents, CompressionType type, BlockHandle *handle) {
 		Rep *r = rep_;
 		handle->set_offset(r->offset);
 		handle->set_size(block_contents.size());
@@ -189,10 +178,8 @@ namespace leveldb {
 		if (r->status.ok()) {
 			char trailer[kBlockTrailerSize];
 			trailer[0] = type;  //类型
-			uint32_t crc = crc32c::Value(block_contents.data(),
-										 block_contents.size());  //对数据做crc校验和
-			crc = crc32c::Extend(crc, trailer,
-								 1);  // Extend crc to cover block type 对类型追加校验和
+			uint32_t crc = crc32c::Value(block_contents.data(), block_contents.size());  //对数据做crc校验和
+			crc = crc32c::Extend(crc, trailer, 1);  // Extend crc to cover block type 对类型追加校验和
 			EncodeFixed32(trailer + 1, crc32c::Mask(crc));
 			r->status = r->file->Append(Slice(trailer, kBlockTrailerSize));
 			if (r->status.ok()) {

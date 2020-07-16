@@ -22,9 +22,7 @@ namespace leveldb {
 			if (i % (N / 10) == 0) {
 				s = i;
 			} else {
-				s = rnd.OneIn(4000)
-					? rnd.Uniform(6000)
-					: (rnd.OneIn(10) ? rnd.Uniform(100) : rnd.Uniform(20));
+				s = rnd.OneIn(4000) ? rnd.Uniform(6000) : (rnd.OneIn(10) ? rnd.Uniform(100) : rnd.Uniform(20));
 			}
 			if (s == 0) {
 				// Our arena disallows size 0 allocations.

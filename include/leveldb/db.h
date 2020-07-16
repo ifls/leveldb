@@ -54,8 +54,7 @@ namespace leveldb {
 		// Stores nullptr in *dbptr and returns a non-OK status on error.
 
 		// Caller should delete *dbptr when it is no longer needed.
-		static Status Open(const Options &options, const std::string &name,
-						   DB **dbptr);
+		static Status Open(const Options &options, const std::string &name, DB **dbptr);
 
 		// 关掉构造函数
 		DB() = default;
@@ -69,8 +68,7 @@ namespace leveldb {
 		// Set the database entry for "key" to "value".
 		// Returns OK on success, and a non-OK status on error.
 		// Note: consider setting options.sync = true.
-		virtual Status Put(const WriteOptions &options, const Slice &key,
-						   const Slice &value) = 0;
+		virtual Status Put(const WriteOptions &options, const Slice &key, const Slice &value) = 0;
 
 		// Remove the database entry (if any) for "key". 不存在不生效，而不会返回一个错误
 		// Returns OK on success, and a non-OK status on error.
@@ -88,8 +86,7 @@ namespace leveldb {
 		// If there is no entry for "key" leave *value unchanged 保持value参数不变 and return a status for which Status::IsNotFound() returns true.
 		// 返回 找不到
 		// May return some other Status on an error.
-		virtual Status Get(const ReadOptions &options, const Slice &key,
-						   std::string *value) = 0;
+		virtual Status Get(const ReadOptions &options, const Slice &key, std::string *value) = 0;
 
 		// Return a heap-allocated iterator over the contents of the database.
 		// The result of NewIterator() is initially invalid (caller must
@@ -135,8 +132,7 @@ namespace leveldb {
 		// sizes will be one-tenth the size of the corresponding user data size.
 		//
 		// The results may not include the sizes of recently written data.
-		virtual void GetApproximateSizes(const Range *range, int n,
-										 uint64_t *sizes) = 0;
+		virtual void GetApproximateSizes(const Range *range, int n, uint64_t *sizes) = 0;
 
 		// Compact the underlying storage for the key range [*begin,*end].
 
@@ -157,15 +153,13 @@ namespace leveldb {
 	//
 	// Note: For backwards compatibility, if DestroyDB is unable to list the
 	// database files, Status::OK() will still be returned masking this failure. 失败
-	LEVELDB_EXPORT Status DestroyDB(const std::string &name,
-									const Options &options);
+	LEVELDB_EXPORT Status DestroyDB(const std::string &name, const Options &options);
 
 	// If a DB cannot be opened, you may attempt to call this method to 如果打开数据库失败，因为一些奔溃导致，数据不完整，可以使用此方法恢复
 	// resurrect复活 as much of the contents of the database as possible尽可能恢复.
 	// Some data may be lost, so be careful when calling this function
 	// on a database that contains important information.
-	LEVELDB_EXPORT Status RepairDB(const std::string &dbname,
-								   const Options &options);
+	LEVELDB_EXPORT Status RepairDB(const std::string &dbname, const Options &options);
 
 }  // namespace leveldb
 

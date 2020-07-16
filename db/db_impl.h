@@ -42,15 +42,13 @@ namespace leveldb {
 		~DBImpl() override;
 
 		// Implementations of the DB interface
-		Status Put(const WriteOptions &, const Slice &key,
-				   const Slice &value) override;
+		Status Put(const WriteOptions &, const Slice &key, const Slice &value) override;
 
 		Status Delete(const WriteOptions &, const Slice &key) override;
 
 		Status Write(const WriteOptions &options, WriteBatch *updates) override;
 
-		Status Get(const ReadOptions &options, const Slice &key,
-				   std::string *value) override;
+		Status Get(const ReadOptions &options, const Slice &key, std::string *value) override;
 
 		Iterator *NewIterator(const ReadOptions &) override;
 
@@ -117,9 +115,7 @@ namespace leveldb {
 			int64_t bytes_written;
 		};
 
-		Iterator *NewInternalIterator(const ReadOptions &,
-									  SequenceNumber *latest_snapshot,
-									  uint32_t *seed);
+		Iterator *NewInternalIterator(const ReadOptions &, SequenceNumber *latest_snapshot, uint32_t *seed);
 
 		Status NewDB();
 
@@ -139,8 +135,8 @@ namespace leveldb {
 		// Errors are recorded in bg_error_.
 		void CompactMemTable() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-		Status RecoverLogFile(uint64_t log_number, bool last_log, bool *save_manifest,
-							  VersionEdit *edit, SequenceNumber *max_sequence)
+		Status RecoverLogFile(uint64_t log_number, bool last_log, bool *save_manifest, VersionEdit *edit
+				, SequenceNumber *max_sequence)
 		EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
 		Status WriteLevel0Table(MemTable *mem, VersionEdit *edit, Version *base)
@@ -231,10 +227,8 @@ namespace leveldb {
 
 	// Sanitize db options.  The caller should delete result.info_log if
 	// it is not equal to src.info_log.
-	Options SanitizeOptions(const std::string &db,
-							const InternalKeyComparator *icmp,
-							const InternalFilterPolicy *ipolicy,
-							const Options &src);
+	Options SanitizeOptions(const std::string &db, const InternalKeyComparator *icmp
+			, const InternalFilterPolicy *ipolicy, const Options &src);
 
 }  // namespace leveldb
 

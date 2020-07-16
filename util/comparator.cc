@@ -29,13 +29,11 @@ namespace leveldb {
 				return a.compare(b);
 			}
 
-			void FindShortestSeparator(std::string *start,
-									   const Slice &limit) const override {
+			void FindShortestSeparator(std::string *start, const Slice &limit) const override {
 				// Find length of common prefix
 				size_t min_length = std::min(start->size(), limit.size());
 				size_t diff_index = 0;
-				while ((diff_index < min_length) &&
-					   ((*start)[diff_index] == limit[diff_index])) {
+				while ((diff_index < min_length) && ((*start)[diff_index] == limit[diff_index])) {
 					diff_index++;
 				}
 

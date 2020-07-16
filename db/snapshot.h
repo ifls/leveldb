@@ -16,8 +16,7 @@ namespace leveldb {
 	// Each SnapshotImpl corresponds to a particular sequence number.
 	class SnapshotImpl : public Snapshot {
 	public:
-		SnapshotImpl(SequenceNumber sequence_number)
-				: sequence_number_(sequence_number) {}
+		SnapshotImpl(SequenceNumber sequence_number) : sequence_number_(sequence_number) {}
 
 		SequenceNumber sequence_number() const { return sequence_number_; }
 

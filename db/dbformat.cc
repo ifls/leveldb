@@ -25,8 +25,7 @@ namespace leveldb {
 
 	std::string ParsedInternalKey::DebugString() const {
 		std::ostringstream ss;
-		ss << '\'' << EscapeString(user_key.ToString()) << "' @ " << sequence << " : "
-		   << static_cast<int>(type);
+		ss << '\'' << EscapeString(user_key.ToString()) << "' @ " << sequence << " : " << static_cast<int>(type);
 		return ss.str();
 	}
 
@@ -62,19 +61,16 @@ namespace leveldb {
 		return r;
 	}
 
-	void InternalKeyComparator::FindShortestSeparator(std::string *start,
-													  const Slice &limit) const {
+	void InternalKeyComparator::FindShortestSeparator(std::string *start, const Slice &limit) const {
 		// Attempt to shorten the user portion of the key
 		Slice user_start = ExtractUserKey(*start);
 		Slice user_limit = ExtractUserKey(limit);
 		std::string tmp(user_start.data(), user_start.size());
 		user_comparator_->FindShortestSeparator(&tmp, user_limit);
-		if (tmp.size() < user_start.size() &&
-			user_comparator_->Compare(user_start, tmp) < 0) {
+		if (tmp.size() < user_start.size() && user_comparator_->Compare(user_start, tmp) < 0) {
 			// User key has become shorter physically, but larger logically.
 			// Tack on the earliest possible number to the shortened user key.
-			PutFixed64(&tmp,
-					   PackSequenceAndType(kMaxSequenceNumber, kValueTypeForSeek));
+			PutFixed64(&tmp, PackSequenceAndType(kMaxSequenceNumber, kValueTypeForSeek));
 			assert(this->Compare(*start, tmp) < 0);
 			assert(this->Compare(tmp, limit) < 0);
 			start->swap(tmp);
@@ -85,12 +81,10 @@ namespace leveldb {
 		Slice user_key = ExtractUserKey(*key);
 		std::string tmp(user_key.data(), user_key.size());
 		user_comparator_->FindShortSuccessor(&tmp);
-		if (tmp.size() < user_key.size() &&
-			user_comparator_->Compare(user_key, tmp) < 0) {
+		if (tmp.size() < user_key.size() && user_comparator_->Compare(user_key, tmp) < 0) {
 			// User key has become shorter physically, but larger logically.
 			// Tack on the earliest possible number to the shortened user key.
-			PutFixed64(&tmp,
-					   PackSequenceAndType(kMaxSequenceNumber, kValueTypeForSeek));
+			PutFixed64(&tmp, PackSequenceAndType(kMaxSequenceNumber, kValueTypeForSeek));
 			assert(this->Compare(*key, tmp) < 0);
 			key->swap(tmp);
 		}
@@ -98,8 +92,7 @@ namespace leveldb {
 
 	const char *InternalFilterPolicy::Name() const { return user_policy_->Name(); }
 
-	void InternalFilterPolicy::CreateFilter(const Slice *keys, int n,
-											std::string *dst) const {
+	void InternalFilterPolicy::CreateFilter(const Slice *keys, int n, std::string *dst) const {
 		// We rely on the fact that the code in table.cc does not mind us
 		// adjusting keys[].
 		Slice *mkey = const_cast<Slice *>(keys);

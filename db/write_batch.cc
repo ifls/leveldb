@@ -56,8 +56,7 @@ namespace leveldb {
 			input.remove_prefix(1);
 			switch (tag) {
 				case kTypeValue:
-					if (GetLengthPrefixedSlice(&input, &key) &&
-						GetLengthPrefixedSlice(&input, &value)) {
+					if (GetLengthPrefixedSlice(&input, &key) && GetLengthPrefixedSlice(&input, &value)) {
 						//拿到kv，插入到内存表
 						handler->Put(key, value);
 					} else {

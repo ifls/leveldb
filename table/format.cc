@@ -44,8 +44,7 @@ namespace leveldb {
 		const char *magic_ptr = input->data() + kEncodedLength - 8;
 		const uint32_t magic_lo = DecodeFixed32(magic_ptr);
 		const uint32_t magic_hi = DecodeFixed32(magic_ptr + 4);
-		const uint64_t magic = ((static_cast<uint64_t>(magic_hi) << 32) |
-								(static_cast<uint64_t>(magic_lo)));
+		const uint64_t magic = ((static_cast<uint64_t>(magic_hi) << 32) | (static_cast<uint64_t>(magic_lo)));
 		if (magic != kTableMagicNumber) {
 			return Status::Corruption("not an sstable (bad magic number)");
 		}
@@ -62,8 +61,8 @@ namespace leveldb {
 		return result;
 	}
 
-	Status ReadBlock(RandomAccessFile *file, const ReadOptions &options,
-					 const BlockHandle &handle, BlockContents *result) {
+	Status ReadBlock(RandomAccessFile *file, const ReadOptions &options, const BlockHandle &handle
+			, BlockContents *result) {
 		result->data = Slice();
 		result->cachable = false;
 		result->heap_allocated = false;

@@ -17,8 +17,7 @@ namespace leveldb {
 
 		class TwoLevelIterator : public Iterator {
 		public:
-			TwoLevelIterator(Iterator *index_iter, BlockFunction block_function,
-							 void *arg, const ReadOptions &options);
+			TwoLevelIterator(Iterator *index_iter, BlockFunction block_function, void *arg, const ReadOptions &options);
 
 			~TwoLevelIterator() override;
 
@@ -79,14 +78,9 @@ namespace leveldb {
 			std::string data_block_handle_;
 		};
 
-		TwoLevelIterator::TwoLevelIterator(Iterator *index_iter,
-										   BlockFunction block_function, void *arg,
-										   const ReadOptions &options)
-				: block_function_(block_function),
-				  arg_(arg),
-				  options_(options),
-				  index_iter_(index_iter),
-				  data_iter_(nullptr) {}
+		TwoLevelIterator::TwoLevelIterator(Iterator *index_iter, BlockFunction block_function, void *arg
+				, const ReadOptions &options)
+				: block_function_(block_function), arg_(arg), options_(options), index_iter_(index_iter), data_iter_(nullptr) {}
 
 		TwoLevelIterator::~TwoLevelIterator() = default;
 
@@ -159,8 +153,7 @@ namespace leveldb {
 				SetDataIterator(nullptr);
 			} else {
 				Slice handle = index_iter_.value();
-				if (data_iter_.iter() != nullptr &&
-					handle.compare(data_block_handle_) == 0) {
+				if (data_iter_.iter() != nullptr && handle.compare(data_block_handle_) == 0) {
 					// data_iter_ is already constructed with this iterator, so
 					// no need to change anything
 				} else {
@@ -173,9 +166,8 @@ namespace leveldb {
 
 	}  // namespace
 
-	Iterator *NewTwoLevelIterator(Iterator *index_iter,
-								  BlockFunction block_function, void *arg,
-								  const ReadOptions &options) {
+	Iterator *NewTwoLevelIterator(Iterator *index_iter, BlockFunction block_function, void *arg
+			, const ReadOptions &options) {
 		return new TwoLevelIterator(index_iter, block_function, arg, options);
 	}
 

@@ -32,15 +32,11 @@ static void StartPhase(const char *name) {
 static void CheckEqual(const char *expected, const char *v, size_t n) {
 	if (expected == NULL && v == NULL) {
 		// ok
-	} else if (expected != NULL && v != NULL && n == strlen(expected) &&
-			   memcmp(expected, v, n) == 0) {
+	} else if (expected != NULL && v != NULL && n == strlen(expected) && memcmp(expected, v, n) == 0) {
 		// ok
 		return;
 	} else {
-		fprintf(stderr, "%s: expected '%s', got '%s'\n",
-				phase,
-				(expected ? expected : "(null)"),
-				(v ? v : "(null"));
+		fprintf(stderr, "%s: expected '%s', got '%s'\n", phase, (expected ? expected : "(null)"), (v ? v : "(null"));
 		abort();
 	}
 }
@@ -52,11 +48,7 @@ static void Free(char **ptr) {
 	}
 }
 
-static void CheckGet(
-		leveldb_t *db,
-		const leveldb_readoptions_t *options,
-		const char *key,
-		const char *expected) {
+static void CheckGet(leveldb_t *db, const leveldb_readoptions_t *options, const char *key, const char *expected) {
 	char *err = NULL;
 	size_t val_len;
 	char *val;
@@ -66,8 +58,7 @@ static void CheckGet(
 	Free(&val);
 }
 
-static void CheckIter(leveldb_iterator_t *iter,
-					  const char *key, const char *val) {
+static void CheckIter(leveldb_iterator_t *iter, const char *key, const char *val) {
 	size_t len;
 	const char *str;
 	str = leveldb_iter_key(iter, &len);
@@ -77,9 +68,7 @@ static void CheckIter(leveldb_iterator_t *iter,
 }
 
 // Callback from leveldb_writebatch_iterate()
-static void CheckPut(void *ptr,
-					 const char *k, size_t klen,
-					 const char *v, size_t vlen) {
+static void CheckPut(void *ptr, const char *k, size_t klen, const char *v, size_t vlen) {
 	int *state = (int *) ptr;
 	CheckCondition(*state < 2);
 	switch (*state) {
@@ -106,8 +95,7 @@ static void CheckDel(void *ptr, const char *k, size_t klen) {
 static void CmpDestroy(void *arg) {}
 
 // 按字节比较
-static int CmpCompare(void *arg, const char *a, size_t alen,
-					  const char *b, size_t blen) {
+static int CmpCompare(void *arg, const char *a, size_t alen, const char *b, size_t blen) {
 	int n = (alen < blen) ? alen : blen;
 	int r = memcmp(a, b, n);
 	if (r == 0) {
@@ -130,19 +118,15 @@ static const char *FilterName(void *arg) {
 	return "TestFilter";
 }
 
-static char *FilterCreate(
-		void *arg,
-		const char *const *key_array, const size_t *key_length_array,
-		int num_keys,
-		size_t *filter_length) {
+static char *FilterCreate(void *arg, const char *const *key_array, const size_t *key_length_array, int num_keys
+		, size_t *filter_length) {
 	*filter_length = 4;
 	char *result = (char *) malloc(4);
 	memcpy(result, "fake", 4);
 	return result;
 }
 
-uint8_t FilterKeyMatch(void *arg, const char *key, size_t length,
-					   const char *filter, size_t filter_length) {
+uint8_t FilterKeyMatch(void *arg, const char *key, size_t length, const char *filter, size_t filter_length) {
 	CheckCondition(filter_length == 4);
 	CheckCondition(memcmp(filter, "fake", 4) == 0);
 	return fake_filter_result;

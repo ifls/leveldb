@@ -37,8 +37,7 @@
 
 namespace leveldb {
 
-	BlockBuilder::BlockBuilder(const Options *options)
-			: options_(options), restarts_(), counter_(0), finished_(false) {
+	BlockBuilder::BlockBuilder(const Options *options) : options_(options), restarts_(), counter_(0), finished_(false) {
 		assert(options->block_restart_interval >= 1);
 		restarts_.push_back(0);  // First restart point is at offset 0
 	}

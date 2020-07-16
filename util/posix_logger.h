@@ -52,38 +52,32 @@ namespace leveldb {
 			// fails, we make a second attempt with a dynamically allocated buffer.
 			constexpr const int kStackBufferSize = 512;
 			char stack_buffer[kStackBufferSize];
-			static_assert(sizeof(stack_buffer) == static_cast<size_t>(kStackBufferSize),
-						  "sizeof(char) is expected to be 1 in C++");
+			static_assert(sizeof(stack_buffer) ==
+						  static_cast<size_t>(kStackBufferSize), "sizeof(char) is expected to be 1 in C++");
 
 			int dynamic_buffer_size = 0;  // Computed in the first iteration.
 			for (int iteration = 0; iteration < 2; ++iteration) {
-				const int buffer_size =
-						(iteration == 0) ? kStackBufferSize : dynamic_buffer_size;
-				char *const buffer =
-						(iteration == 0) ? stack_buffer : new char[dynamic_buffer_size];
+				const int buffer_size = (iteration == 0) ? kStackBufferSize : dynamic_buffer_size;
+				char *const buffer = (iteration == 0) ? stack_buffer : new char[dynamic_buffer_size];
 
 				// Print the header into the buffer.
-				int buffer_offset = std::snprintf(
-						buffer, buffer_size, "%04d/%02d/%02d-%02d:%02d:%02d.%06d %s ",
-						now_components.tm_year + 1900, now_components.tm_mon + 1,
-						now_components.tm_mday, now_components.tm_hour, now_components.tm_min,
-						now_components.tm_sec, static_cast<int>(now_timeval.tv_usec),
-						thread_id.c_str());
+				int buffer_offset = std::snprintf(buffer, buffer_size, "%04d/%02d/%02d-%02d:%02d:%02d.%06d %s ",
+												  now_components.tm_year + 1900, now_components.tm_mon +
+																				 1, now_components.tm_mday, now_components.tm_hour, now_components.tm_min, now_components.tm_sec, static_cast<int>(now_timeval.tv_usec), thread_id.c_str());
 
 				// The header can be at most 28 characters (10 date + 15 time +
 				// 3 delimiters) plus the thread ID, which should fit comfortably into the
 				// static buffer.
 				assert(buffer_offset <= 28 + kMaxThreadIdSize);
-				static_assert(28 + kMaxThreadIdSize < kStackBufferSize,
-							  "stack-allocated buffer may not fit the message header");
+				static_assert(28 + kMaxThreadIdSize <
+							  kStackBufferSize, "stack-allocated buffer may not fit the message header");
 				assert(buffer_offset < buffer_size);
 
 				// Print the message into the buffer.
 				std::va_list arguments_copy;
 				va_copy(arguments_copy, arguments);
-				buffer_offset +=
-						std::vsnprintf(buffer + buffer_offset, buffer_size - buffer_offset,
-									   format, arguments_copy);
+				buffer_offset += std::vsnprintf(
+						buffer + buffer_offset, buffer_size - buffer_offset, format, arguments_copy);
 				va_end(arguments_copy);
 
 				// The code below may append a newline at the end of the buffer, which

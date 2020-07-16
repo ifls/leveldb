@@ -87,8 +87,7 @@ namespace leveldb {
 		// not exist.
 		//
 		// The returned file may be concurrently accessed by multiple threads.
-		virtual Status NewRandomAccessFile(const std::string &fname,
-										   RandomAccessFile **result) = 0;
+		virtual Status NewRandomAccessFile(const std::string &fname, RandomAccessFile **result) = 0;
 
 		// Create an object that writes to a new file with the specified
 		// name.  Deletes any existing file with the same name and creates a
@@ -111,8 +110,7 @@ namespace leveldb {
 		// not allow appending to an existing file.  Users of Env (including
 		// the leveldb implementation) must be prepared to deal with
 		// an Env that does not support appending.
-		virtual Status NewAppendableFile(const std::string &fname,
-										 WritableFile **result);
+		virtual Status NewAppendableFile(const std::string &fname, WritableFile **result);
 
 		// Returns true iff the named file exists.
 		virtual bool FileExists(const std::string &fname) = 0;
@@ -169,8 +167,7 @@ namespace leveldb {
 		virtual Status GetFileSize(const std::string &fname, uint64_t *file_size) = 0;
 
 		// Rename file src to target.
-		virtual Status RenameFile(const std::string &src,
-								  const std::string &target) = 0;
+		virtual Status RenameFile(const std::string &src, const std::string &target) = 0;
 
 		// Lock the specified file.  Used to prevent concurrent access to
 		// the same db by multiple processes.  On failure, stores nullptr in
@@ -273,8 +270,7 @@ namespace leveldb {
 		// status.
 		//
 		// Safe for concurrent use by multiple threads.
-		virtual Status Read(uint64_t offset, size_t n, Slice *result,
-							char *scratch) const = 0;
+		virtual Status Read(uint64_t offset, size_t n, Slice *result, char *scratch) const = 0;
 	};
 
 	// A file abstraction for sequential writing.  The implementation
@@ -336,12 +332,10 @@ namespace leveldb {
 	;
 
 	// A utility routine: write "data" to the named file.
-	LEVELDB_EXPORT Status WriteStringToFile(Env *env, const Slice &data,
-											const std::string &fname);
+	LEVELDB_EXPORT Status WriteStringToFile(Env *env, const Slice &data, const std::string &fname);
 
 	// A utility routine: read contents of named file into *data
-	LEVELDB_EXPORT Status ReadFileToString(Env *env, const std::string &fname,
-										   std::string *data);
+	LEVELDB_EXPORT Status ReadFileToString(Env *env, const std::string &fname, std::string *data);
 
 	// An implementation of Env that forwards all calls to another Env.
 	// May be useful to clients who wish to override just part of the
@@ -361,8 +355,7 @@ namespace leveldb {
 			return target_->NewSequentialFile(f, r);
 		}
 
-		Status NewRandomAccessFile(const std::string &f,
-								   RandomAccessFile **r) override {
+		Status NewRandomAccessFile(const std::string &f, RandomAccessFile **r) override {
 			return target_->NewRandomAccessFile(f, r);
 		}
 
@@ -378,8 +371,7 @@ namespace leveldb {
 			return target_->FileExists(f);
 		}
 
-		Status GetChildren(const std::string &dir,
-						   std::vector<std::string> *r) override {
+		Status GetChildren(const std::string &dir, std::vector<std::string> *r) override {
 			return target_->GetChildren(dir, r);
 		}
 

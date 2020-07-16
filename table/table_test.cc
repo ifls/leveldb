@@ -28,8 +28,7 @@ namespace leveldb {
 	static std::string Reverse(const Slice &key) {
 		std::string str(key.ToString());
 		std::string rev("");
-		for (std::string::reverse_iterator rit = str.rbegin(); rit != str.rend();
-			 ++rit) {
+		for (std::string::reverse_iterator rit = str.rbegin(); rit != str.rend(); ++rit) {
 			rev.push_back(*rit);
 		}
 		return rev;
@@ -46,8 +45,7 @@ namespace leveldb {
 				return BytewiseComparator()->Compare(Reverse(a), Reverse(b));
 			}
 
-			void FindShortestSeparator(std::string *start,
-									   const Slice &limit) const override {
+			void FindShortestSeparator(std::string *start, const Slice &limit) const override {
 				std::string s = Reverse(*start);
 				std::string l = Reverse(limit);
 				BytewiseComparator()->FindShortestSeparator(&s, l);
@@ -112,15 +110,13 @@ namespace leveldb {
 
 	class StringSource : public RandomAccessFile {
 	public:
-		StringSource(const Slice &contents)
-				: contents_(contents.data(), contents.size()) {}
+		StringSource(const Slice &contents) : contents_(contents.data(), contents.size()) {}
 
 		~StringSource() override = default;
 
 		uint64_t Size() const { return contents_.size(); }
 
-		Status Read(uint64_t offset, size_t n, Slice *result,
-					char *scratch) const override {
+		Status Read(uint64_t offset, size_t n, Slice *result, char *scratch) const override {
 			if (offset >= contents_.size()) {
 				return Status::InvalidArgument("invalid Read offset");
 			}
@@ -153,8 +149,7 @@ namespace leveldb {
 		// Finish constructing the data structure with all the keys that have
 		// been added so far.  Returns the keys in sorted order in "*keys"
 		// and stores the key/value pairs in "*kvmap"
-		void Finish(const Options &options, std::vector<std::string> *keys,
-					KVMap *kvmap) {
+		void Finish(const Options &options, std::vector<std::string> *keys, KVMap *kvmap) {
 			*kvmap = data_;
 			keys->clear();
 			for (const auto &kvp : data_) {
@@ -180,8 +175,7 @@ namespace leveldb {
 
 	class BlockConstructor : public Constructor {
 	public:
-		explicit BlockConstructor(const Comparator *cmp)
-				: Constructor(cmp), comparator_(cmp), block_(nullptr) {}
+		explicit BlockConstructor(const Comparator *cmp) : Constructor(cmp), comparator_(cmp), block_(nullptr) {}
 
 		~BlockConstructor() override { delete block_; }
 
@@ -217,8 +211,7 @@ namespace leveldb {
 
 	class TableConstructor : public Constructor {
 	public:
-		TableConstructor(const Comparator *cmp)
-				: Constructor(cmp), source_(nullptr), table_(nullptr) {}
+		TableConstructor(const Comparator *cmp) : Constructor(cmp), source_(nullptr), table_(nullptr) {}
 
 		~TableConstructor() override { Reset(); }
 
@@ -316,8 +309,7 @@ namespace leveldb {
 
 	class MemTableConstructor : public Constructor {
 	public:
-		explicit MemTableConstructor(const Comparator *cmp)
-				: Constructor(cmp), internal_comparator_(cmp) {
+		explicit MemTableConstructor(const Comparator *cmp) : Constructor(cmp), internal_comparator_(cmp) {
 			memtable_ = new MemTable(internal_comparator_);
 			memtable_->Ref();
 		}
@@ -347,8 +339,7 @@ namespace leveldb {
 
 	class DBConstructor : public Constructor {
 	public:
-		explicit DBConstructor(const Comparator *cmp)
-				: Constructor(cmp), comparator_(cmp) {
+		explicit DBConstructor(const Comparator *cmp) : Constructor(cmp), comparator_(cmp) {
 			db_ = nullptr;
 			NewDB();
 		}
@@ -403,29 +394,27 @@ namespace leveldb {
 		int restart_interval;
 	};
 
-	static const TestArgs kTestArgList[] = {
-			{TABLE_TEST,    false, 16},
-			{TABLE_TEST,    false, 1},
-			{TABLE_TEST,    false, 1024},
-			{TABLE_TEST,    true,  16},
-			{TABLE_TEST,    true,  1},
-			{TABLE_TEST,    true,  1024},
+	static const TestArgs kTestArgList[] = {{TABLE_TEST,    false, 16},
+											{TABLE_TEST,    false, 1},
+											{TABLE_TEST,    false, 1024},
+											{TABLE_TEST,    true,  16},
+											{TABLE_TEST,    true,  1},
+											{TABLE_TEST,    true,  1024},
 
-			{BLOCK_TEST,    false, 16},
-			{BLOCK_TEST,    false, 1},
-			{BLOCK_TEST,    false, 1024},
-			{BLOCK_TEST,    true,  16},
-			{BLOCK_TEST,    true,  1},
-			{BLOCK_TEST,    true,  1024},
+											{BLOCK_TEST,    false, 16},
+											{BLOCK_TEST,    false, 1},
+											{BLOCK_TEST,    false, 1024},
+											{BLOCK_TEST,    true,  16},
+											{BLOCK_TEST,    true,  1},
+											{BLOCK_TEST,    true,  1024},
 
 			// Restart interval does not matter for memtables
-			{MEMTABLE_TEST, false, 16},
-			{MEMTABLE_TEST, true,  16},
+											{MEMTABLE_TEST, false, 16},
+											{MEMTABLE_TEST, true,  16},
 
 			// Do not bother with restart interval variations for DB
-			{DB_TEST,       false, 16},
-			{DB_TEST,       true,  16},
-	};
+											{DB_TEST,       false, 16},
+											{DB_TEST,       true,  16},};
 	static const int kNumTestArgs = sizeof(kTestArgList) / sizeof(kTestArgList[0]);
 
 	class Harness : public testing::Test {
@@ -476,13 +465,11 @@ namespace leveldb {
 			TestRandomAccess(rnd, keys, data);
 		}
 
-		void TestForwardScan(const std::vector<std::string> &keys,
-							 const KVMap &data) {
+		void TestForwardScan(const std::vector<std::string> &keys, const KVMap &data) {
 			Iterator *iter = constructor_->NewIterator();
 			ASSERT_TRUE(!iter->Valid());
 			iter->SeekToFirst();
-			for (KVMap::const_iterator model_iter = data.begin();
-				 model_iter != data.end(); ++model_iter) {
+			for (KVMap::const_iterator model_iter = data.begin(); model_iter != data.end(); ++model_iter) {
 				ASSERT_EQ(ToString(data, model_iter), ToString(iter));
 				iter->Next();
 			}
@@ -490,13 +477,11 @@ namespace leveldb {
 			delete iter;
 		}
 
-		void TestBackwardScan(const std::vector<std::string> &keys,
-							  const KVMap &data) {
+		void TestBackwardScan(const std::vector<std::string> &keys, const KVMap &data) {
 			Iterator *iter = constructor_->NewIterator();
 			ASSERT_TRUE(!iter->Valid());
 			iter->SeekToLast();
-			for (KVMap::const_reverse_iterator model_iter = data.rbegin();
-				 model_iter != data.rend(); ++model_iter) {
+			for (KVMap::const_reverse_iterator model_iter = data.rbegin(); model_iter != data.rend(); ++model_iter) {
 				ASSERT_EQ(ToString(data, model_iter), ToString(iter));
 				iter->Prev();
 			}
@@ -504,8 +489,7 @@ namespace leveldb {
 			delete iter;
 		}
 
-		void TestRandomAccess(Random *rnd, const std::vector<std::string> &keys,
-							  const KVMap &data) {
+		void TestRandomAccess(Random *rnd, const std::vector<std::string> &keys, const KVMap &data) {
 			static const bool kVerbose = false;
 			Iterator *iter = constructor_->NewIterator();
 			ASSERT_TRUE(!iter->Valid());
@@ -581,8 +565,7 @@ namespace leveldb {
 			}
 		}
 
-		std::string ToString(const KVMap &data,
-							 const KVMap::const_reverse_iterator &it) {
+		std::string ToString(const KVMap &data, const KVMap::const_reverse_iterator &it) {
 			if (it == data.rend()) {
 				return "END";
 			} else {
@@ -706,16 +689,13 @@ namespace leveldb {
 		for (int i = 0; i < kNumTestArgs; i++) {
 			Init(kTestArgList[i]);
 			Random rnd(test::RandomSeed() + 5);
-			for (int num_entries = 0; num_entries < 2000;
-				 num_entries += (num_entries < 50 ? 1 : 200)) {
+			for (int num_entries = 0; num_entries < 2000; num_entries += (num_entries < 50 ? 1 : 200)) {
 				if ((num_entries % 10) == 0) {
-					std::fprintf(stderr, "case %d of %d: num_entries = %d\n", (i + 1),
-								 int(kNumTestArgs), num_entries);
+					std::fprintf(stderr, "case %d of %d: num_entries = %d\n", (i + 1), int(kNumTestArgs), num_entries);
 				}
 				for (int e = 0; e < num_entries; e++) {
 					std::string v;
-					Add(test::RandomKey(&rnd, rnd.Skewed(4)),
-						test::RandomString(&rnd, rnd.Skewed(5), &v).ToString());
+					Add(test::RandomKey(&rnd, rnd.Skewed(4)), test::RandomString(&rnd, rnd.Skewed(5), &v).ToString());
 				}
 				Test(&rnd);
 			}
@@ -729,8 +709,7 @@ namespace leveldb {
 		int num_entries = 100000;
 		for (int e = 0; e < num_entries; e++) {
 			std::string v;
-			Add(test::RandomKey(&rnd, rnd.Skewed(4)),
-				test::RandomString(&rnd, rnd.Skewed(5), &v).ToString());
+			Add(test::RandomKey(&rnd, rnd.Skewed(4)), test::RandomString(&rnd, rnd.Skewed(5), &v).ToString());
 		}
 		Test(&rnd);
 
@@ -761,8 +740,7 @@ namespace leveldb {
 		Iterator *iter = memtable->NewIterator();
 		iter->SeekToFirst();
 		while (iter->Valid()) {
-			std::fprintf(stderr, "key: '%s' -> '%s'\n", iter->key().ToString().c_str(),
-						 iter->value().ToString().c_str());
+			std::fprintf(stderr, "key: '%s' -> '%s'\n", iter->key().ToString().c_str(), iter->value().ToString().c_str());
 			iter->Next();
 		}
 
@@ -773,9 +751,7 @@ namespace leveldb {
 	static bool Between(uint64_t val, uint64_t low, uint64_t high) {
 		bool result = (val >= low) && (val <= high);
 		if (!result) {
-			std::fprintf(stderr, "Value %llu is not in range [%llu, %llu]\n",
-						 (unsigned long long) (val), (unsigned long long) (low),
-						 (unsigned long long) (high));
+			std::fprintf(stderr, "Value %llu is not in range [%llu, %llu]\n", (unsigned long long) (val), (unsigned long long) (low), (unsigned long long) (high));
 		}
 		return result;
 	}

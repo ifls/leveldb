@@ -47,16 +47,8 @@ namespace leveldb {
 				kForward, kReverse
 			};
 
-			DBIter(DBImpl *db, const Comparator *cmp, Iterator *iter, SequenceNumber s,
-				   uint32_t seed)
-					: db_(db),
-					  user_comparator_(cmp),
-					  iter_(iter),
-					  sequence_(s),
-					  direction_(kForward),
-					  valid_(false),
-					  rnd_(seed),
-					  bytes_until_read_sampling_(RandomCompactionPeriod()) {}
+			DBIter(DBImpl *db, const Comparator *cmp, Iterator *iter, SequenceNumber s, uint32_t seed)
+					: db_(db), user_comparator_(cmp), iter_(iter), sequence_(s), direction_(kForward), valid_(false), rnd_(seed), bytes_until_read_sampling_(RandomCompactionPeriod()) {}
 
 			DBIter(const DBIter &) = delete;
 
@@ -202,8 +194,7 @@ namespace leveldb {
 							skipping = true;
 							break;
 						case kTypeValue:
-							if (skipping &&
-								user_comparator_->Compare(ikey.user_key, *skip) <= 0) {
+							if (skipping && user_comparator_->Compare(ikey.user_key, *skip) <= 0) {
 								// Entry hidden
 							} else {
 								valid_ = true;
@@ -235,8 +226,7 @@ namespace leveldb {
 						ClearSavedValue();
 						return;
 					}
-					if (user_comparator_->Compare(ExtractUserKey(iter_->key()), saved_key_) <
-						0) {
+					if (user_comparator_->Compare(ExtractUserKey(iter_->key()), saved_key_) < 0) {
 						break;
 					}
 				}
@@ -254,8 +244,7 @@ namespace leveldb {
 				do {
 					ParsedInternalKey ikey;
 					if (ParseKey(&ikey) && ikey.sequence <= sequence_) {
-						if ((value_type != kTypeDeletion) &&
-							user_comparator_->Compare(ikey.user_key, saved_key_) < 0) {
+						if ((value_type != kTypeDeletion) && user_comparator_->Compare(ikey.user_key, saved_key_) < 0) {
 							// We encountered a non-deleted value in entries for previous keys,
 							break;
 						}
@@ -292,8 +281,7 @@ namespace leveldb {
 			direction_ = kForward;
 			ClearSavedValue();
 			saved_key_.clear();
-			AppendInternalKey(&saved_key_,
-							  ParsedInternalKey(target, sequence_, kValueTypeForSeek));
+			AppendInternalKey(&saved_key_, ParsedInternalKey(target, sequence_, kValueTypeForSeek));
 			iter_->Seek(saved_key_);
 			if (iter_->Valid()) {
 				FindNextUserEntry(false, &saved_key_ /* temporary storage */);
@@ -322,9 +310,8 @@ namespace leveldb {
 
 	}  // anonymous namespace
 
-	Iterator *NewDBIterator(DBImpl *db, const Comparator *user_key_comparator,
-							Iterator *internal_iter, SequenceNumber sequence,
-							uint32_t seed) {
+	Iterator *NewDBIterator(DBImpl *db, const Comparator *user_key_comparator, Iterator *internal_iter
+			, SequenceNumber sequence, uint32_t seed) {
 		return new DBIter(db, user_key_comparator, internal_iter, sequence, seed);
 	}
 

@@ -35,8 +35,7 @@ namespace leveldb {
 		Block *index_block;
 	};
 
-	Status Table::Open(const Options &options, RandomAccessFile *file,
-					   uint64_t size, Table **table) {
+	Status Table::Open(const Options &options, RandomAccessFile *file, uint64_t size, Table **table) {
 		*table = nullptr;
 		if (size < Footer::kEncodedLength) {
 			return Status::Corruption("file is too short to be an sstable");
@@ -44,8 +43,7 @@ namespace leveldb {
 
 		char footer_space[Footer::kEncodedLength];
 		Slice footer_input;
-		Status s = file->Read(size - Footer::kEncodedLength, Footer::kEncodedLength,
-							  &footer_input, footer_space);
+		Status s = file->Read(size - Footer::kEncodedLength, Footer::kEncodedLength, &footer_input, footer_space);
 		if (!s.ok()) return s;
 
 		Footer footer;
@@ -150,8 +148,7 @@ namespace leveldb {
 
 	// Convert an index iterator value (i.e., an encoded BlockHandle)
 	// into an iterator over the contents of the corresponding block.
-	Iterator *Table::BlockReader(void *arg, const ReadOptions &options,
-								 const Slice &index_value) {
+	Iterator *Table::BlockReader(void *arg, const ReadOptions &options, const Slice &index_value) {
 		Table *table = reinterpret_cast<Table *>(arg);
 		Cache *block_cache = table->rep_->options.block_cache;
 		Block *block = nullptr;
@@ -178,8 +175,7 @@ namespace leveldb {
 					if (s.ok()) {
 						block = new Block(contents);
 						if (contents.cachable && options.fill_cache) {
-							cache_handle = block_cache->Insert(key, block, block->size(),
-															   &DeleteCachedBlock);
+							cache_handle = block_cache->Insert(key, block, block->size(), &DeleteCachedBlock);
 						}
 					}
 				}
@@ -206,14 +202,11 @@ namespace leveldb {
 	}
 
 	Iterator *Table::NewIterator(const ReadOptions &options) const {
-		return NewTwoLevelIterator(
-				rep_->index_block->NewIterator(rep_->options.comparator),
-				&Table::BlockReader, const_cast<Table *>(this), options);
+		return NewTwoLevelIterator(rep_->index_block->NewIterator(rep_->options.comparator), &Table::BlockReader, const_cast<Table *>(this), options);
 	}
 
-	Status Table::InternalGet(const ReadOptions &options, const Slice &k, void *arg,
-							  void (*handle_result)(void *, const Slice &,
-													const Slice &)) {
+	Status Table::InternalGet(const ReadOptions &options, const Slice &k, void *arg, void (*handle_result)(void *
+			, const Slice &, const Slice &)) {
 		Status s;
 		Iterator *iiter = rep_->index_block->NewIterator(rep_->options.comparator);
 		iiter->Seek(k);
@@ -243,8 +236,7 @@ namespace leveldb {
 	}
 
 	uint64_t Table::ApproximateOffsetOf(const Slice &key) const {
-		Iterator *index_iter =
-				rep_->index_block->NewIterator(rep_->options.comparator);
+		Iterator *index_iter = rep_->index_block->NewIterator(rep_->options.comparator);
 		index_iter->Seek(key);
 		uint64_t result;
 		if (index_iter->Valid()) {

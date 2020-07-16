@@ -53,13 +53,11 @@ namespace leveldb {
 		}
 
 		void Insert(int key, int value, int charge = 1) {
-			cache_->Release(cache_->Insert(EncodeKey(key), EncodeValue(value), charge,
-										   &CacheTest::Deleter));
+			cache_->Release(cache_->Insert(EncodeKey(key), EncodeValue(value), charge, &CacheTest::Deleter));
 		}
 
 		Cache::Handle *InsertAndReturnHandle(int key, int value, int charge = 1) {
-			return cache_->Insert(EncodeKey(key), EncodeValue(value), charge,
-								  &CacheTest::Deleter);
+			return cache_->Insert(EncodeKey(key), EncodeValue(value), charge, &CacheTest::Deleter);
 		}
 
 		void Erase(int key) { cache_->Erase(EncodeKey(key)); }

@@ -25,8 +25,7 @@ namespace leveldb {
 
 	size_t MemTable::ApproximateMemoryUsage() { return arena_.MemoryUsage(); }
 
-	int MemTable::KeyComparator::operator()(const char *aptr,
-											const char *bptr) const {
+	int MemTable::KeyComparator::operator()(const char *aptr, const char *bptr) const {
 		// Internal keys are encoded as length-prefixed strings.
 		Slice a = GetLengthPrefixedSlice(aptr);
 		Slice b = GetLengthPrefixedSlice(bptr);
@@ -84,8 +83,7 @@ namespace leveldb {
 	// sequence 在函数结束后会立刻++
 	// type 区分 插入kv和删除k两种操作
 	// 删除 是 value 是 空 Slice()
-	void MemTable::Add(SequenceNumber s, ValueType type, const Slice &key,
-					   const Slice &value) {
+	void MemTable::Add(SequenceNumber s, ValueType type, const Slice &key, const Slice &value) {
 		// Format of an entry is concatenation of:
 		//  key_size     : varint32 of internal_key.size()
 		//  key bytes    : char[internal_key.size()]
@@ -95,9 +93,8 @@ namespace leveldb {
 		size_t key_size = key.size();
 		size_t val_size = value.size();
 		size_t internal_key_size = key_size + 8;
-		const size_t encoded_len = VarintLength(internal_key_size) +
-								   internal_key_size + VarintLength(val_size) +
-								   val_size;
+		const size_t encoded_len =
+				VarintLength(internal_key_size) + internal_key_size + VarintLength(val_size) + val_size;
 		// 分配内存空间
 		char *buf = arena_.Allocate(encoded_len);
 		//key

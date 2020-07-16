@@ -66,8 +66,7 @@ namespace {
 		}
 		// Double-check that dup2() is saying the file descriptor is closed.
 		if (errno != EBADF) {
-			std::fprintf(stderr, "Unexpected errno after calling dup2 on fd %d: %s\n",
-						 fd, std::strerror(errno));
+			std::fprintf(stderr, "Unexpected errno after calling dup2 on fd %d: %s\n", fd, std::strerror(errno));
 			return kTextCloseOnExecHelperDup2FailedCode;
 		}
 		return 0;
@@ -96,8 +95,7 @@ namespace {
 				// file descriptor is closed, or the given file descriptor if it is open.
 				//
 				// Double-check that dup2() is saying the fd is closed.
-				ASSERT_EQ(EBADF, errno)
-											<< "dup2() should set errno to EBADF on closed file descriptors";
+				ASSERT_EQ(EBADF, errno) << "dup2() should set errno to EBADF on closed file descriptors";
 				continue;
 			}
 			open_fds->insert(fd);
@@ -110,28 +108,23 @@ namespace {
 	// call. Assumes that exactly one FD was opened since that call.
 	//
 	// Returns void so the implementation can use ASSERT_EQ.
-	void GetNewlyOpenedFileDescriptor(
-			const std::unordered_set<int> &baseline_open_fds, int *result_fd) {
+	void GetNewlyOpenedFileDescriptor(const std::unordered_set<int> &baseline_open_fds, int *result_fd) {
 		std::unordered_set<int> open_fds;
 		GetOpenFileDescriptors(&open_fds);
 		for (int fd : baseline_open_fds) {
-			ASSERT_EQ(1, open_fds.count(fd))
-										<< "Previously opened file descriptor was closed during test setup";
+			ASSERT_EQ(1, open_fds.count(fd)) << "Previously opened file descriptor was closed during test setup";
 			open_fds.erase(fd);
 		}
-		ASSERT_EQ(1, open_fds.size())
-									<< "Expected exactly one newly opened file descriptor during test setup";
+		ASSERT_EQ(1, open_fds.size()) << "Expected exactly one newly opened file descriptor during test setup";
 		*result_fd = *open_fds.begin();
 	}
 
 	// Check that a fork()+exec()-ed child process does not have an extra open FD.
-	void CheckCloseOnExecDoesNotLeakFDs(
-			const std::unordered_set<int> &baseline_open_fds) {
+	void CheckCloseOnExecDoesNotLeakFDs(const std::unordered_set<int> &baseline_open_fds) {
 		// Prepare the argument list for the child process.
 		// execv() wants mutable buffers.
 		char switch_buffer[sizeof(kTestCloseOnExecSwitch)];
-		std::memcpy(switch_buffer, kTestCloseOnExecSwitch,
-					sizeof(kTestCloseOnExecSwitch));
+		std::memcpy(switch_buffer, kTestCloseOnExecSwitch, sizeof(kTestCloseOnExecSwitch));
 
 		int probed_fd;
 		GetNewlyOpenedFileDescriptor(baseline_open_fds, &probed_fd);
@@ -141,8 +134,7 @@ namespace {
 
 		// The helper process is launched with the command below.
 		//      env_posix_tests --test-close-on-exec-helper 3
-		char *child_argv[] = {GetArgvZero()->data(), switch_buffer, fd_buffer.data(),
-							  nullptr};
+		char *child_argv[] = {GetArgvZero()->data(), switch_buffer, fd_buffer.data(), nullptr};
 
 		constexpr int kForkInChildProcessReturnValue = 0;
 		int child_pid = fork();
@@ -154,10 +146,8 @@ namespace {
 
 		int child_status = 0;
 		ASSERT_EQ(child_pid, ::waitpid(child_pid, &child_status, 0));
-		ASSERT_TRUE(WIFEXITED(child_status))
-									<< "The helper process did not exit with an exit code";
-		ASSERT_EQ(0, WEXITSTATUS(child_status))
-									<< "The helper process encountered an error";
+		ASSERT_TRUE(WIFEXITED(child_status)) << "The helper process did not exit with an exit code";
+		ASSERT_EQ(0, WEXITSTATUS(child_status)) << "The helper process encountered an error";
 	}
 
 }  // namespace
@@ -345,8 +335,7 @@ int main(int argc, char **argv) {
 #endif  // HAVE_O_CLOEXEC
 
 	// All tests currently run with the same read-only file limits.
-	leveldb::EnvPosixTest::SetFileLimits(leveldb::kReadOnlyFileLimit,
-										 leveldb::kMMapLimit);
+	leveldb::EnvPosixTest::SetFileLimits(leveldb::kReadOnlyFileLimit, leveldb::kMMapLimit);
 
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

@@ -62,8 +62,7 @@ namespace leveldb {
 		private:
 			// Extend record types with the following special values
 			enum {
-				kEof = kMaxRecordType + 1,
-				// Returned whenever we find an invalid physical record.
+				kEof = kMaxRecordType + 1, // Returned whenever we find an invalid physical record.
 				// Currently there are three situations in which this happens:
 				// * The record has an invalid CRC (ReadPhysicalRecord reports a drop)
 				// * The record is a 0-length record (No drop is reported)

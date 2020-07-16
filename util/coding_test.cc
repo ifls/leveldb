@@ -133,8 +133,7 @@ namespace leveldb {
 	TEST(Coding, Varint32Overflow) {
 		uint32_t result;
 		std::string input("\x81\x82\x83\x84\x85\x11");
-		ASSERT_TRUE(GetVarint32Ptr(input.data(), input.data() + input.size(),
-								   &result) == nullptr);
+		ASSERT_TRUE(GetVarint32Ptr(input.data(), input.data() + input.size(), &result) == nullptr);
 	}
 
 	TEST(Coding, Varint32Truncation) {
@@ -145,16 +144,14 @@ namespace leveldb {
 		for (size_t len = 0; len < s.size() - 1; len++) {
 			ASSERT_TRUE(GetVarint32Ptr(s.data(), s.data() + len, &result) == nullptr);
 		}
-		ASSERT_TRUE(GetVarint32Ptr(s.data(), s.data() + s.size(), &result) !=
-					nullptr);
+		ASSERT_TRUE(GetVarint32Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
 		ASSERT_EQ(large_value, result);
 	}
 
 	TEST(Coding, Varint64Overflow) {
 		uint64_t result;
 		std::string input("\x81\x82\x83\x84\x85\x81\x82\x83\x84\x85\x11");
-		ASSERT_TRUE(GetVarint64Ptr(input.data(), input.data() + input.size(),
-								   &result) == nullptr);
+		ASSERT_TRUE(GetVarint64Ptr(input.data(), input.data() + input.size(), &result) == nullptr);
 	}
 
 	TEST(Coding, Varint64Truncation) {
@@ -165,8 +162,7 @@ namespace leveldb {
 		for (size_t len = 0; len < s.size() - 1; len++) {
 			ASSERT_TRUE(GetVarint64Ptr(s.data(), s.data() + len, &result) == nullptr);
 		}
-		ASSERT_TRUE(GetVarint64Ptr(s.data(), s.data() + s.size(), &result) !=
-					nullptr);
+		ASSERT_TRUE(GetVarint64Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
 		ASSERT_EQ(large_value, result);
 	}
 

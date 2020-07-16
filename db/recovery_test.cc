@@ -85,8 +85,7 @@ namespace leveldb {
 
 		std::string ManifestFileName() {
 			std::string current;
-			EXPECT_LEVELDB_OK(
-					ReadFileToString(env_, CurrentFileName(dbname_), &current));
+			EXPECT_LEVELDB_OK(ReadFileToString(env_, CurrentFileName(dbname_), &current));
 			size_t len = current.size();
 			if (len > 0 && current[len - 1] == '\n') {
 				current.resize(len - 1);
@@ -161,8 +160,7 @@ namespace leveldb {
 
 	TEST_F(RecoveryTest, ManifestReused) {
 		if (!CanAppend()) {
-			std::fprintf(stderr,
-						 "skipping test because env does not support appending\n");
+			std::fprintf(stderr, "skipping test because env does not support appending\n");
 			return;
 		}
 		ASSERT_LEVELDB_OK(Put("foo", "bar"));
@@ -178,8 +176,7 @@ namespace leveldb {
 
 	TEST_F(RecoveryTest, LargeManifestCompacted) {
 		if (!CanAppend()) {
-			std::fprintf(stderr,
-						 "skipping test because env does not support appending\n");
+			std::fprintf(stderr, "skipping test because env does not support appending\n");
 			return;
 		}
 		ASSERT_LEVELDB_OK(Put("foo", "bar"));
@@ -219,8 +216,7 @@ namespace leveldb {
 
 	TEST_F(RecoveryTest, LogFileReuse) {
 		if (!CanAppend()) {
-			std::fprintf(stderr,
-						 "skipping test because env does not support appending\n");
+			std::fprintf(stderr, "skipping test because env does not support appending\n");
 			return;
 		}
 		for (int i = 0; i < 2; i++) {

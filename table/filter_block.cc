@@ -15,8 +15,7 @@ namespace leveldb {
 	static const size_t kFilterBaseLg = 11;
 	static const size_t kFilterBase = 1 << kFilterBaseLg; // 2K 每个过滤块的大小
 	// 过滤块构造器
-	FilterBlockBuilder::FilterBlockBuilder(const FilterPolicy *policy)
-			: policy_(policy) {}
+	FilterBlockBuilder::FilterBlockBuilder(const FilterPolicy *policy) : policy_(policy) {}
 
 	void FilterBlockBuilder::StartBlock(uint64_t block_offset) {
 		uint64_t filter_index = (block_offset / kFilterBase);
@@ -76,8 +75,7 @@ namespace leveldb {
 		start_.clear();
 	}
 
-	FilterBlockReader::FilterBlockReader(const FilterPolicy *policy,
-										 const Slice &contents)
+	FilterBlockReader::FilterBlockReader(const FilterPolicy *policy, const Slice &contents)
 			: policy_(policy), data_(nullptr), offset_(nullptr), num_(0), base_lg_(0) {
 		size_t n = contents.size();
 		if (n < 5) return;  // 1 byte for base_lg_ and 4 for start of offset array

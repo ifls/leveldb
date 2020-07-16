@@ -89,10 +89,7 @@ namespace leveldb {
 			int64_t pos_at_last_flush_;
 
 			FileState(const std::string &filename)
-					: filename_(filename),
-					  pos_(-1),
-					  pos_at_last_sync_(-1),
-					  pos_at_last_flush_(-1) {}
+					: filename_(filename), pos_(-1), pos_at_last_sync_(-1), pos_at_last_flush_(-1) {}
 
 			FileState() : pos_(-1), pos_at_last_sync_(-1), pos_at_last_flush_(-1) {}
 
@@ -107,8 +104,7 @@ namespace leveldb {
 	// is written to or sync'ed.
 	class TestWritableFile : public WritableFile {
 	public:
-		TestWritableFile(const FileState &state, WritableFile *f,
-						 FaultInjectionTestEnv *env);
+		TestWritableFile(const FileState &state, WritableFile *f, FaultInjectionTestEnv *env);
 
 		~TestWritableFile() override;
 
@@ -131,16 +127,13 @@ namespace leveldb {
 
 	class FaultInjectionTestEnv : public EnvWrapper {
 	public:
-		FaultInjectionTestEnv()
-				: EnvWrapper(Env::Default()), filesystem_active_(true) {}
+		FaultInjectionTestEnv() : EnvWrapper(Env::Default()), filesystem_active_(true) {}
 
 		~FaultInjectionTestEnv() override = default;
 
-		Status NewWritableFile(const std::string &fname,
-							   WritableFile **result) override;
+		Status NewWritableFile(const std::string &fname, WritableFile **result) override;
 
-		Status NewAppendableFile(const std::string &fname,
-								 WritableFile **result) override;
+		Status NewAppendableFile(const std::string &fname, WritableFile **result) override;
 
 		Status RemoveFile(const std::string &f) override;
 
@@ -181,8 +174,7 @@ namespace leveldb {
 		bool filesystem_active_ GUARDED_BY(mutex_);  // Record flushes, syncs, writes
 	};
 
-	TestWritableFile::TestWritableFile(const FileState &state, WritableFile *f,
-									   FaultInjectionTestEnv *env)
+	TestWritableFile::TestWritableFile(const FileState &state, WritableFile *f, FaultInjectionTestEnv *env)
 			: state_(state), target_(f), writable_file_opened_(true), env_(env) {
 		assert(f != nullptr);
 	}
@@ -245,8 +237,7 @@ namespace leveldb {
 		return s;
 	}
 
-	Status FaultInjectionTestEnv::NewWritableFile(const std::string &fname,
-												  WritableFile **result) {
+	Status FaultInjectionTestEnv::NewWritableFile(const std::string &fname, WritableFile **result) {
 		WritableFile *actual_writable_file;
 		Status s = target()->NewWritableFile(fname, &actual_writable_file);
 		if (s.ok()) {
@@ -263,8 +254,7 @@ namespace leveldb {
 		return s;
 	}
 
-	Status FaultInjectionTestEnv::NewAppendableFile(const std::string &fname,
-													WritableFile **result) {
+	Status FaultInjectionTestEnv::NewAppendableFile(const std::string &fname, WritableFile **result) {
 		WritableFile *actual_writable_file;
 		Status s = target()->NewAppendableFile(fname, &actual_writable_file);
 		if (s.ok()) {
@@ -303,11 +293,9 @@ namespace leveldb {
 		new_files_since_last_dir_sync_.clear();
 	}
 
-	bool FaultInjectionTestEnv::IsFileCreatedSinceLastDirSync(
-			const std::string &filename) {
+	bool FaultInjectionTestEnv::IsFileCreatedSinceLastDirSync(const std::string &filename) {
 		MutexLock l(&mutex_);
-		return new_files_since_last_dir_sync_.find(filename) !=
-			   new_files_since_last_dir_sync_.end();
+		return new_files_since_last_dir_sync_.find(filename) != new_files_since_last_dir_sync_.end();
 	}
 
 	void FaultInjectionTestEnv::UntrackFile(const std::string &f) {
@@ -325,8 +313,7 @@ namespace leveldb {
 		return s;
 	}
 
-	Status FaultInjectionTestEnv::RenameFile(const std::string &s,
-											 const std::string &t) {
+	Status FaultInjectionTestEnv::RenameFile(const std::string &s, const std::string &t) {
 		Status ret = EnvWrapper::RenameFile(s, t);
 
 		if (ret.ok()) {
@@ -337,8 +324,7 @@ namespace leveldb {
 			}
 
 			if (new_files_since_last_dir_sync_.erase(s) != 0) {
-				assert(new_files_since_last_dir_sync_.find(t) ==
-					   new_files_since_last_dir_sync_.end());
+				assert(new_files_since_last_dir_sync_.find(t) == new_files_since_last_dir_sync_.end());
 				new_files_since_last_dir_sync_.insert(t);
 			}
 		}
@@ -356,8 +342,7 @@ namespace leveldb {
 	Status FaultInjectionTestEnv::RemoveFilesCreatedAfterLastDirSync() {
 		// Because RemoveFile access this container make a copy to avoid deadlock
 		mutex_.Lock();
-		std::set<std::string> new_files(new_files_since_last_dir_sync_.begin(),
-										new_files_since_last_dir_sync_.end());
+		std::set<std::string> new_files(new_files_since_last_dir_sync_.begin(), new_files_since_last_dir_sync_.end());
 		mutex_.Unlock();
 		Status status;
 		for (const auto &new_file : new_files) {
@@ -394,10 +379,7 @@ namespace leveldb {
 		Options options_;
 		DB *db_;
 
-		FaultInjectionTest()
-				: env_(new FaultInjectionTestEnv),
-				  tiny_cache_(NewLRUCache(100)),
-				  db_(nullptr) {
+		FaultInjectionTest() : env_(new FaultInjectionTestEnv), tiny_cache_(NewLRUCache(100)), db_(nullptr) {
 			dbname_ = testing::TempDir() + "fault_test";
 			DestroyDB(dbname_, Options());  // Destroy any db from earlier run
 			options_.reuse_logs = true;
@@ -436,8 +418,7 @@ namespace leveldb {
 			return db_->Get(options, key, val);
 		}
 
-		Status Verify(int start_idx, int num_vals,
-					  ExpectedVerifResult expected) const {
+		Status Verify(int start_idx, int num_vals, ExpectedVerifResult expected) const {
 			std::string val;
 			std::string value_space;
 			Status s;
@@ -513,16 +494,13 @@ namespace leveldb {
 			Build(num_pre_sync, num_post_sync);
 		}
 
-		void PartialCompactTestReopenWithFault(ResetMethod reset_method,
-											   int num_pre_sync, int num_post_sync) {
+		void PartialCompactTestReopenWithFault(ResetMethod reset_method, int num_pre_sync, int num_post_sync) {
 			env_->SetFilesystemActive(false);
 			CloseDB();
 			ResetDBState(reset_method);
 			ASSERT_LEVELDB_OK(OpenDB());
-			ASSERT_LEVELDB_OK(
-					Verify(0, num_pre_sync, FaultInjectionTest::VAL_EXPECT_NO_ERROR));
-			ASSERT_LEVELDB_OK(Verify(num_pre_sync, num_post_sync,
-									 FaultInjectionTest::VAL_EXPECT_ERROR));
+			ASSERT_LEVELDB_OK(Verify(0, num_pre_sync, FaultInjectionTest::VAL_EXPECT_NO_ERROR));
+			ASSERT_LEVELDB_OK(Verify(num_pre_sync, num_post_sync, FaultInjectionTest::VAL_EXPECT_ERROR));
 		}
 
 		void NoWriteTestPreFault() {}
@@ -541,8 +519,7 @@ namespace leveldb {
 				int num_post_sync = rnd.Uniform(kMaxNumValues);
 
 				PartialCompactTestPreFault(num_pre_sync, num_post_sync);
-				PartialCompactTestReopenWithFault(RESET_DROP_UNSYNCED_DATA, num_pre_sync,
-												  num_post_sync);
+				PartialCompactTestReopenWithFault(RESET_DROP_UNSYNCED_DATA, num_pre_sync, num_post_sync);
 
 				NoWriteTestPreFault();
 				NoWriteTestReopenWithFault(RESET_DROP_UNSYNCED_DATA);
@@ -550,8 +527,7 @@ namespace leveldb {
 				PartialCompactTestPreFault(num_pre_sync, num_post_sync);
 				// No new files created so we expect all values since no files will be
 				// dropped.
-				PartialCompactTestReopenWithFault(RESET_DELETE_UNSYNCED_FILES,
-												  num_pre_sync + num_post_sync, 0);
+				PartialCompactTestReopenWithFault(RESET_DELETE_UNSYNCED_FILES, num_pre_sync + num_post_sync, 0);
 
 				NoWriteTestPreFault();
 				NoWriteTestReopenWithFault(RESET_DELETE_UNSYNCED_FILES);

@@ -14,11 +14,7 @@ namespace leveldb {
 		class MergingIterator : public Iterator {
 		public:
 			MergingIterator(const Comparator *comparator, Iterator **children, int n)
-					: comparator_(comparator),
-					  children_(new IteratorWrapper[n]),
-					  n_(n),
-					  current_(nullptr),
-					  direction_(kForward) {
+					: comparator_(comparator), children_(new IteratorWrapper[n]), n_(n), current_(nullptr), direction_(kForward) {
 				for (int i = 0; i < n; i++) {
 					children_[i].Set(children[i]);
 				}
@@ -65,8 +61,7 @@ namespace leveldb {
 						IteratorWrapper *child = &children_[i];
 						if (child != current_) {
 							child->Seek(key());
-							if (child->Valid() &&
-								comparator_->Compare(key(), child->key()) == 0) {
+							if (child->Valid() && comparator_->Compare(key(), child->key()) == 0) {
 								child->Next();
 							}
 						}
@@ -179,8 +174,7 @@ namespace leveldb {
 		}
 	}  // namespace
 
-	Iterator *NewMergingIterator(const Comparator *comparator, Iterator **children,
-								 int n) {
+	Iterator *NewMergingIterator(const Comparator *comparator, Iterator **children, int n) {
 		assert(n >= 0);
 		if (n == 0) {
 			return NewEmptyIterator();

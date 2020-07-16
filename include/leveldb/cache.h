@@ -55,9 +55,8 @@ namespace leveldb {
 		// The caller must call this->Release(handle) when the returned mapping is no longer needed.
 		//
 		// When the inserted entry is no longer needed, the key and value will be passed to "deleter". 回调
-		virtual Handle *
-		Insert(const Slice &key, void *value, size_t charge, void (*deleter)(const Slice &key, void *value)
-		) = 0;
+		virtual Handle *Insert(const Slice &key, void *value, size_t charge, void (*deleter)(const Slice &key
+				, void *value)) = 0;
 
 		// If the cache has no mapping for "key", returns nullptr.
 		//

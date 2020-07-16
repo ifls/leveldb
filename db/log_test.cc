@@ -39,10 +39,7 @@ namespace leveldb {
 		class LogTest : public testing::Test {
 		public:
 			LogTest()
-					: reading_(false),
-					  writer_(new Writer(&dest_)),
-					  reader_(new Reader(&source_, &report_, true /*checksum*/,
-										 0 /*initial_offset*/)) {}
+					: reading_(false), writer_(new Writer(&dest_)), reader_(new Reader(&source_, &report_, true /*checksum*/, 0 /*initial_offset*/)) {}
 
 			~LogTest() {
 				delete writer_;
@@ -111,8 +108,7 @@ namespace leveldb {
 
 			void WriteInitialOffsetLog() {
 				for (int i = 0; i < num_initial_offset_records_; i++) {
-					std::string record(initial_offset_record_sizes_[i],
-									   static_cast<char>('a' + i));
+					std::string record(initial_offset_record_sizes_[i], static_cast<char>('a' + i));
 					Write(record);
 				}
 			}
@@ -134,25 +130,20 @@ namespace leveldb {
 				delete offset_reader;
 			}
 
-			void CheckInitialOffsetRecord(uint64_t initial_offset,
-										  int expected_record_offset) {
+			void CheckInitialOffsetRecord(uint64_t initial_offset, int expected_record_offset) {
 				WriteInitialOffsetLog();
 				reading_ = true;
 				source_.contents_ = Slice(dest_.contents_);
-				Reader *offset_reader =
-						new Reader(&source_, &report_, true /*checksum*/, initial_offset);
+				Reader *offset_reader = new Reader(&source_, &report_, true /*checksum*/, initial_offset);
 
 				// Read all records from expected_record_offset through the last one.
 				ASSERT_LT(expected_record_offset, num_initial_offset_records_);
-				for (; expected_record_offset < num_initial_offset_records_;
-					   ++expected_record_offset) {
+				for (; expected_record_offset < num_initial_offset_records_; ++expected_record_offset) {
 					Slice record;
 					std::string scratch;
 					ASSERT_TRUE(offset_reader->ReadRecord(&record, &scratch));
-					ASSERT_EQ(initial_offset_record_sizes_[expected_record_offset],
-							  record.size());
-					ASSERT_EQ(initial_offset_last_record_offsets_[expected_record_offset],
-							  offset_reader->LastRecordOffset());
+					ASSERT_EQ(initial_offset_record_sizes_[expected_record_offset], record.size());
+					ASSERT_EQ(initial_offset_last_record_offsets_[expected_record_offset], offset_reader->LastRecordOffset());
 					ASSERT_EQ((char) ('a' + expected_record_offset), record.data()[0]);
 				}
 				delete offset_reader;
@@ -239,24 +230,20 @@ namespace leveldb {
 			Reader *reader_;
 		};
 
-		size_t LogTest::initial_offset_record_sizes_[] = {
-				10000,  // Two sizable records in first block
-				10000,
-				2 * log::kBlockSize - 1000,  // Span three blocks
-				1,
-				13716,                          // Consume all but two bytes of block 3.
-				log::kBlockSize - kHeaderSize,  // Consume the entirety of block 4.
+		size_t LogTest::initial_offset_record_sizes_[] = {10000,  // Two sizable records in first block
+														  10000, 2 * log::kBlockSize - 1000,  // Span three blocks
+														  1,
+														  13716,                          // Consume all but two bytes of block 3.
+														  log::kBlockSize -
+														  kHeaderSize,  // Consume the entirety of block 4.
 		};
 
-		uint64_t LogTest::initial_offset_last_record_offsets_[] = {
-				0,
-				kHeaderSize + 10000,
-				2 * (kHeaderSize + 10000),
-				2 * (kHeaderSize + 10000) + (2 * log::kBlockSize - 1000) + 3 * kHeaderSize,
-				2 * (kHeaderSize + 10000) + (2 * log::kBlockSize - 1000) + 3 * kHeaderSize +
-				kHeaderSize + 1,
-				3 * log::kBlockSize,
-		};
+		uint64_t LogTest::initial_offset_last_record_offsets_[] = {0, kHeaderSize + 10000, 2 * (kHeaderSize + 10000),
+																   2 * (kHeaderSize + 10000) +
+																   (2 * log::kBlockSize - 1000) + 3 * kHeaderSize,
+																   2 * (kHeaderSize + 10000) +
+																   (2 * log::kBlockSize - 1000) + 3 * kHeaderSize +
+																   kHeaderSize + 1, 3 * log::kBlockSize,};
 
 		// LogTest::initial_offset_last_record_offsets_ must be defined before this.
 		int LogTest::num_initial_offset_records_ =
@@ -545,9 +532,7 @@ namespace leveldb {
 		}
 
 		TEST_F(LogTest, ReadFourthStart) {
-			CheckInitialOffsetRecord(
-					2 * (kHeaderSize + 1000) + (2 * log::kBlockSize - 1000) + 3 * kHeaderSize,
-					3);
+			CheckInitialOffsetRecord(2 * (kHeaderSize + 1000) + (2 * log::kBlockSize - 1000) + 3 * kHeaderSize, 3);
 		}
 
 		TEST_F(LogTest, ReadInitialOffsetIntoBlockPadding) {

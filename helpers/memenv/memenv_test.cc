@@ -113,8 +113,7 @@ namespace leveldb {
 		ASSERT_LEVELDB_OK(seq_file->Skip(1));
 		ASSERT_LEVELDB_OK(seq_file->Read(1000, &result, scratch));  // Read "world".
 		ASSERT_EQ(0, result.compare("world"));
-		ASSERT_LEVELDB_OK(
-				seq_file->Read(1000, &result, scratch));  // Try reading past EOF.
+		ASSERT_LEVELDB_OK(seq_file->Read(1000, &result, scratch));  // Try reading past EOF.
 		ASSERT_EQ(0, result.size());
 		ASSERT_LEVELDB_OK(seq_file->Skip(100));  // Try to skip past end of file.
 		ASSERT_LEVELDB_OK(seq_file->Read(1000, &result, scratch));

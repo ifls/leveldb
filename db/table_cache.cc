@@ -29,17 +29,12 @@ namespace leveldb {
 		cache->Release(h);
 	}
 
-	TableCache::TableCache(const std::string &dbname, const Options &options,
-						   int entries)
-			: env_(options.env),
-			  dbname_(dbname),
-			  options_(options),
-			  cache_(NewLRUCache(entries)) {}
+	TableCache::TableCache(const std::string &dbname, const Options &options, int entries)
+			: env_(options.env), dbname_(dbname), options_(options), cache_(NewLRUCache(entries)) {}
 
 	TableCache::~TableCache() { delete cache_; }
 
-	Status TableCache::FindTable(uint64_t file_number, uint64_t file_size,
-								 Cache::Handle **handle) {
+	Status TableCache::FindTable(uint64_t file_number, uint64_t file_size, Cache::Handle **handle) {
 		Status s;
 		char buf[sizeof(file_number)];
 		EncodeFixed64(buf, file_number);
@@ -75,8 +70,8 @@ namespace leveldb {
 		return s;
 	}
 
-	Iterator *
-	TableCache::NewIterator(const ReadOptions &options, uint64_t file_number, uint64_t file_size, Table **tableptr) {
+	Iterator *TableCache::NewIterator(const ReadOptions &options, uint64_t file_number, uint64_t file_size
+			, Table **tableptr) {
 		if (tableptr != nullptr) {
 			*tableptr = nullptr;
 		}
@@ -97,8 +92,8 @@ namespace leveldb {
 	}
 
 	// 从 指定sst 拿到key 对应的value
-	Status TableCache::Get(const ReadOptions &options, uint64_t file_number, uint64_t file_size, const Slice &k, void
-	*arg, void (*handle_result)(void *, const Slice &, const Slice &)) {
+	Status TableCache::Get(const ReadOptions &options, uint64_t file_number, uint64_t file_size, const Slice &k
+			, void *arg, void (*handle_result)(void *, const Slice &, const Slice &)) {
 		// todo
 		Cache::Handle *handle = nullptr;
 		Status s = FindTable(file_number, file_size, &handle);

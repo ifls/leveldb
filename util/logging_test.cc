@@ -28,8 +28,7 @@ namespace leveldb {
 		ASSERT_EQ("123", NumberToString(123));
 		ASSERT_EQ("12345678", NumberToString(12345678));
 
-		static_assert(std::numeric_limits<uint64_t>::max() == 18446744073709551615U,
-					  "Test consistency check");
+		static_assert(std::numeric_limits<uint64_t>::max() == 18446744073709551615U, "Test consistency check");
 		ASSERT_EQ("18446744073709551000", NumberToString(18446744073709551000U));
 		ASSERT_EQ("18446744073709551600", NumberToString(18446744073709551600U));
 		ASSERT_EQ("18446744073709551610", NumberToString(18446744073709551610U));
@@ -37,8 +36,7 @@ namespace leveldb {
 		ASSERT_EQ("18446744073709551615", NumberToString(18446744073709551615U));
 	}
 
-	void ConsumeDecimalNumberRoundtripTest(uint64_t number,
-										   const std::string &padding = "") {
+	void ConsumeDecimalNumberRoundtripTest(uint64_t number, const std::string &padding = "") {
 		std::string decimal_number = NumberToString(number);
 		std::string input_string = decimal_number + padding;
 		Slice input(input_string);
@@ -98,8 +96,7 @@ namespace leveldb {
 	}
 
 	TEST(Logging, ConsumeDecimalNumberOverflow) {
-		static_assert(std::numeric_limits<uint64_t>::max() == 18446744073709551615U,
-					  "Test consistency check");
+		static_assert(std::numeric_limits<uint64_t>::max() == 18446744073709551615U, "Test consistency check");
 		ConsumeDecimalNumberOverflowTest("18446744073709551616");
 		ConsumeDecimalNumberOverflowTest("18446744073709551617");
 		ConsumeDecimalNumberOverflowTest("18446744073709551618");

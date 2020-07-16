@@ -15,9 +15,8 @@
 namespace leveldb {
 
 	// 生成 sst
-	Status
-	BuildTable(const std::string &dbname, Env *env, const Options &options, TableCache *table_cache, Iterator *iter,
-			   FileMetaData *meta) {
+	Status BuildTable(const std::string &dbname, Env *env, const Options &options, TableCache *table_cache
+			, Iterator *iter, FileMetaData *meta) {
 		// iter 是 memtable 迭代器
 		Status s;
 		meta->file_size = 0;

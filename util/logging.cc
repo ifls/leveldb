@@ -27,8 +27,7 @@ namespace leveldb {
 				str->push_back(c);
 			} else {
 				char buf[10];
-				std::snprintf(buf, sizeof(buf), "\\x%02x",
-							  static_cast<unsigned int>(c) & 0xff);
+				std::snprintf(buf, sizeof(buf), "\\x%02x", static_cast<unsigned int>(c) & 0xff);
 				str->append(buf);
 			}
 		}
@@ -64,8 +63,7 @@ namespace leveldb {
 
 			// Overflow check.
 			// kMaxUint64 / 10 is also constant and will be optimized away.
-			if (value > kMaxUint64 / 10 ||
-				(value == kMaxUint64 / 10 && ch > kLastDigitOfMaxUint64)) {
+			if (value > kMaxUint64 / 10 || (value == kMaxUint64 / 10 && ch > kLastDigitOfMaxUint64)) {
 				return false;
 			}
 
