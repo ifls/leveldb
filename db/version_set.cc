@@ -488,10 +488,9 @@ namespace leveldb {
                                      smallest_user_key, largest_user_key);
     }
 
-    int Version::PickLevelForMemTableOutput(const Slice &smallest_user_key,
-                                            const Slice &largest_user_key) {
+    int Version::PickLevelForMemTableOutput(const Slice &smallest_user_key, const Slice &largest_user_key) {
         int level = 0;
-        if (!OverlapInLevel(0, &smallest_user_key, &largest_user_key)) {
+        if (!OverlapInLevel(0, &smallest_user_key, &largest_user_key)) { //
             // Push to next level if there is no overlap in next level,
             // and the #bytes overlapping in the level after that are limited.
             InternalKey start(smallest_user_key, kMaxSequenceNumber, kValueTypeForSeek);
@@ -499,9 +498,9 @@ namespace leveldb {
             std::vector<FileMetaData *> overlaps;
             while (level < config::kMaxMemCompactLevel) {
                 if (OverlapInLevel(level + 1, &smallest_user_key, &largest_user_key)) {
-                    break;
+                    break;  // l1 开始必须是不重叠的, 如果有重叠, 不能放到这一层
                 }
-                if (level + 2 < config::kNumLevels) {
+                if (level + 2 < config::kNumLevels) { // 层次太低, 查找效率低
                     // Check that file does not overlap too many grandparent bytes.
                     GetOverlappingInputs(level + 2, &start, &limit, &overlaps);
                     const int64_t sum = TotalFileSize(overlaps);
@@ -512,6 +511,7 @@ namespace leveldb {
                 level++;
             }
         }
+        // key区间 和l0重叠, 就只能放在l0, 如果放到 l1, 可能在 l0 找到比l1 更旧的值, 当成最新的返回了
         return level;
     }
 
@@ -1280,7 +1280,7 @@ namespace leveldb {
         return result;
     }
 
-// 挑选两个不同层级的 sst 合并
+    // 挑选两个不同层级的 sst 合并
     Compaction *VersionSet::PickCompaction() {
         Compaction *c;
         int level;
@@ -1288,7 +1288,7 @@ namespace leveldb {
         // We prefer compactions triggered by too much data in a level over
         // the compactions triggered by seeks.
         const bool size_compaction = (current_->compaction_score_ >= 1);
-        const bool seek_compaction = (current_->file_to_compact_ != nullptr);
+        const bool seek_compaction = (current_->file_to_compact_ != nullptr); // 需要压缩的文件存在
         if (size_compaction) {
             level = current_->compaction_level_;
             assert(level >= 0);
@@ -1308,9 +1308,10 @@ namespace leveldb {
                 // Wrap-around to the beginning of the key space
                 c->inputs_[0].push_back(current_->files_[level][0]);
             }
-        } else if (seek_compaction) {
+        } else if (seek_compaction) {  // 因为seek 失效过多
             level = current_->file_to_compact_level_;
             c = new Compaction(options_, level);
+            // 加入到 ln
             c->inputs_[0].push_back(current_->file_to_compact_);
         } else {
             return nullptr;
@@ -1330,6 +1331,7 @@ namespace leveldb {
             assert(!c->inputs_[0].empty());
         }
 
+        // 将下面的ln 文件 和下面的 l(n+1) 汇合
         SetupOtherInputs(c);
 
         return c;
@@ -1419,32 +1421,38 @@ namespace leveldb {
         InternalKey smallest, largest;
 
         AddBoundaryInputs(icmp_, current_->files_[level], &c->inputs_[0]);
+        // 根据ln 层的文件 算 ln 最小key 最大key
         GetRange(c->inputs_[0], &smallest, &largest);
 
-        current_->GetOverlappingInputs(level + 1, &smallest, &largest,
-                                       &c->inputs_[1]);
+        // 根据 最小key和最大key, 算出 l(n+1) 层的参战文件
+        current_->GetOverlappingInputs(level + 1, &smallest, &largest, &c->inputs_[1]);
 
         // Get entire range covered by compaction
         InternalKey all_start, all_limit;
+        // 根据 ln 和 l(n+1) 的所有参战文件, 算出 总的key范围
         GetRange2(c->inputs_[0], c->inputs_[1], &all_start, &all_limit);
 
         // See if we can grow the number of inputs in "level" without
         // changing the number of "level+1" files we pick up.
-        if (!c->inputs_[1].empty()) {
+        if (!c->inputs_[1].empty()) { // l(n+1) 有文件可以合并
             std::vector<FileMetaData *> expanded0;
+            // 再算 ln 参战文件
             current_->GetOverlappingInputs(level, &all_start, &all_limit, &expanded0);
+
             AddBoundaryInputs(icmp_, current_->files_[level], &expanded0);
+
             const int64_t inputs0_size = TotalFileSize(c->inputs_[0]);
             const int64_t inputs1_size = TotalFileSize(c->inputs_[1]);
             const int64_t expanded0_size = TotalFileSize(expanded0);
+
             if (expanded0.size() > c->inputs_[0].size() &&
-                inputs1_size + expanded0_size <
-                ExpandedCompactionByteSizeLimit(options_)) {
+                inputs1_size + expanded0_size < ExpandedCompactionByteSizeLimit(options_)) {
                 InternalKey new_start, new_limit;
+                // 根据ln 参战文件, 算新的 key范围
                 GetRange(expanded0, &new_start, &new_limit);
                 std::vector<FileMetaData *> expanded1;
-                current_->GetOverlappingInputs(level + 1, &new_start, &new_limit,
-                                               &expanded1);
+                // 根据 最小key和最大key, 算出 l(n+1) 层的参战文件
+                current_->GetOverlappingInputs(level + 1, &new_start, &new_limit, &expanded1);
                 if (expanded1.size() == c->inputs_[1].size()) {
                     Log(options_->info_log,
                         "Expanding@%d %d+%d (%ld+%ld bytes) to %d+%d (%ld+%ld bytes)\n",
@@ -1455,6 +1463,7 @@ namespace leveldb {
                     largest = new_limit;
                     c->inputs_[0] = expanded0;
                     c->inputs_[1] = expanded1;
+                    // 再次计算ln 和 l(n+1)参战文件
                     GetRange2(c->inputs_[0], c->inputs_[1], &all_start, &all_limit);
                 }
             }
@@ -1463,14 +1472,15 @@ namespace leveldb {
         // Compute the set of grandparent files that overlap this compaction
         // (parent == level+1; grandparent == level+2)
         if (level + 2 < config::kNumLevels) {
-            current_->GetOverlappingInputs(level + 2, &all_start, &all_limit,
-                                           &c->grandparents_);
+            // 算 l(n+2) 参战文件
+            current_->GetOverlappingInputs(level + 2, &all_start, &all_limit, &c->grandparents_);
         }
 
         // Update the place where we will do the next compaction for this level.
         // We update this immediately instead of waiting for the VersionEdit
         // to be applied so that if the compaction fails, we will try a different
         // key range next time.
+        // 记录信息, 用于下一次 size compact
         compact_pointer_[level] = largest.Encode().ToString();
         c->edit_.SetCompactPointer(level, largest);
     }

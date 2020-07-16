@@ -91,7 +91,7 @@ namespace leveldb {
         return Status::OK();
     }
 
-// 加一个kv 如果如果可以写满一个data block 就即时写入一块
+    // 加一个kv 如果如果可以写满一个data block 就即时写入一块
     void TableBuilder::Add(const Slice &key, const Slice &value) {
         Rep *r = rep_;
         assert(!r->closed);

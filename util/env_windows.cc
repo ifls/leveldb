@@ -629,7 +629,7 @@ namespace leveldb {
             }
 
             Status NewLogger(const std::string &filename, Logger **result) override {
-                std::FILE * fp = std::fopen(filename.c_str(), "w");
+                std::FILE *fp = std::fopen(filename.c_str(), "w");
                 if (fp == nullptr) {
                     *result = nullptr;
                     return WindowsError(filename, ::GetLastError());
@@ -696,14 +696,13 @@ namespace leveldb {
                   started_background_thread_(false),
                   mmap_limiter_(MaxMmaps()) {}
 
-        void WindowsEnv::Schedule(
-                void (*background_work_function)(void *background_work_arg),
-                void *background_work_arg) {
+        void
+        WindowsEnv::Schedule(void (*background_work_function)(void *background_work_arg), void *background_work_arg) {
             background_work_mutex_.Lock();
 
             // Start the background thread, if we haven't done so already.
             if (!started_background_thread_) {
-                started_background_thread_ = true;
+                started_background_thread_ = true; //新建后台线程执行任务
                 std::thread background_thread(WindowsEnv::BackgroundThreadEntryPoint, this);
                 background_thread.detach();
             }
@@ -713,10 +712,12 @@ namespace leveldb {
                 background_work_cv_.Signal();
             }
 
+            // 插入队列, 稍后执行
             background_work_queue_.emplace(background_work_function, background_work_arg);
             background_work_mutex_.Unlock();
         }
 
+        // 循环从队列取出任务执行, 否则就等待
         void WindowsEnv::BackgroundThreadMain() {
             while (true) {
                 background_work_mutex_.Lock();

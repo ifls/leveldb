@@ -155,7 +155,7 @@ namespace leveldb {
         // Wait for background work to finish.
         mutex_.Lock();
         shutting_down_.store(true, std::memory_order_release);
-        while (background_compaction_scheduled_) {
+        while (background_compaction_scheduled_) {  // 等待压缩完成
             background_work_finished_signal_.Wait();
         }
         mutex_.Unlock();
@@ -508,27 +508,28 @@ namespace leveldb {
         return status;
     }
 
+    // imm -> l0
     Status DBImpl::WriteLevel0Table(MemTable *mem, VersionEdit *edit, Version *base) {
         mutex_.AssertHeld();
         const uint64_t start_micros = env_->NowMicros();
         FileMetaData meta;
         meta.number = versions_->NewFileNumber();  //分配新的文件序号
+
         pending_outputs_.insert(meta.number);
+
         Iterator *iter = mem->NewIterator();
-        Log(options_.info_log, "Level-0 table #%llu: started",
-            (unsigned long long) meta.number);
+        Log(options_.info_log, "Level-0 table #%llu: started", (unsigned long long) meta.number);
 
         Status s;
         {
             mutex_.Unlock();
-            // 构建 sst
+            //  生成并写入 sst
             s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
             mutex_.Lock();
         }
 
-        Log(options_.info_log, "Level-0 table #%llu: %lld bytes %s",
-            (unsigned long long) meta.number, (unsigned long long) meta.file_size,
-            s.ToString().c_str());
+        Log(options_.info_log, "Level-0 table #%llu: %lld bytes %s", (unsigned long long) meta.number,
+            (unsigned long long) meta.file_size, s.ToString().c_str());
         delete iter;
         pending_outputs_.erase(meta.number);
 
@@ -539,12 +540,14 @@ namespace leveldb {
             const Slice min_user_key = meta.smallest.user_key();
             const Slice max_user_key = meta.largest.user_key();
             if (base != nullptr) {
+                // 根据 最小key 和 最大key 计算新生成的sst 应该在哪个level
                 level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
             }
-            edit->AddFile(level, meta.number, meta.file_size, meta.smallest,
-                          meta.largest);
+            // 插入指定level,保存sst元数据
+            edit->AddFile(level, meta.number, meta.file_size, meta.smallest, meta.largest);
         }
 
+        // 更新统计数据
         CompactionStats stats;
         stats.micros = env_->NowMicros() - start_micros;
         stats.bytes_written = meta.file_size;
@@ -572,7 +575,7 @@ namespace leveldb {
         if (s.ok()) {
             edit.SetPrevLogNumber(0);
             edit.SetLogNumber(logfile_number_);  // Earlier logs no longer needed
-            //更新日志
+            // 记录新版本 version
             s = versions_->LogAndApply(&edit, &mutex_);
         }
 
@@ -668,6 +671,7 @@ namespace leveldb {
         }
     }
 
+    // 判断是否 要 调用去 compact
     void DBImpl::MaybeScheduleCompaction() {
         mutex_.AssertHeld();
         if (background_compaction_scheduled_) {
@@ -676,9 +680,10 @@ namespace leveldb {
             // DB is being deleted; no more background compactions
         } else if (!bg_error_.ok()) {
             // Already got an error; no more changes
-        } else if (imm_ == nullptr && manual_compaction_ == nullptr &&
-                   !versions_->NeedsCompaction()) {
+        } else if (imm_ == nullptr && manual_compaction_ == nullptr && !versions_->NeedsCompaction()) {
             // No work to be done
+            // manual_compaction_ != nullptr 表示是 调用 CompactRange 触发
+            // 这里 不变导致无限递归
         } else {
             background_compaction_scheduled_ = true;
             env_->Schedule(&DBImpl::BGWork, this);
@@ -701,12 +706,12 @@ namespace leveldb {
             BackgroundCompaction();
         }
 
-        background_compaction_scheduled_ = false;
+        background_compaction_scheduled_ = false;  // 后台压缩结束
 
         // Previous compaction may have produced too many files in a level,
         // so reschedule another compaction if needed.
-        MaybeScheduleCompaction();
-        background_work_finished_signal_.SignalAll();
+        MaybeScheduleCompaction(); // 可能生成文件太多, 再开启一轮压缩, 以便进一步下沉
+        background_work_finished_signal_.SignalAll();  // 通知所有, 压缩已完成
     }
 
     void DBImpl::BackgroundCompaction() {
@@ -721,7 +726,7 @@ namespace leveldb {
         Compaction *c;
         bool is_manual = (manual_compaction_ != nullptr);
         InternalKey manual_end;
-        if (is_manual) {
+        if (is_manual) { // 主动压缩, 一些工具需要用到, 定时压缩
             ManualCompaction *m = manual_compaction_;
             c = versions_->CompactRange(m->level, m->begin, m->end);
             m->done = (c == nullptr);
