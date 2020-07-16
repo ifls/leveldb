@@ -65,7 +65,7 @@ if (s.ok()) s = db->Put(leveldb::WriteOptions(), key2, value);
 if (s.ok()) s = db->Delete(leveldb::WriteOptions(), key1);
 ```
 
-## Atomic Updates
+## Atomic Updates 奔溃恢复时保证原子性
 
 Note that if the process dies after the Put of key2 but before the delete of
 key1, the same value may be left stored under multiple keys. Such problems can
@@ -85,19 +85,19 @@ if (s.ok()) {
 ```
 
 The `WriteBatch` holds a sequence of edits to be made to the database, and these
-edits within the batch are applied in order. Note that we called Delete before
-Put so that if key1 is identical to key2, we do not end up erroneously dropping
+edits within the batch are applied in order. Note that we called Delete before  先删后增 
+Put so that if key1 is identical to key2, we do not end up erroneously错误性低 dropping
 the value entirely.
 
-Apart from its atomicity benefits, `WriteBatch` may also be used to speed up
-bulk updates by placing lots of individual mutations into the same batch.
+Apart from its atomicity benefits, `WriteBatch` may also be used to speed up 高性能
+bulk updates by placing lots of individual mutations独立的修改 into the same batch.
 
 ## Synchronous Writes
 
-By default, each write to leveldb is asynchronous: it returns after pushing the
-write from the process into the operating system. The transfer from operating
-system memory to the underlying persistent storage happens asynchronously. The
-sync flag can be turned on for a particular write to make the write operation
+By default, each write to leveldb is asynchronousk异步: it returns after pushing the
+write from the process into the operating system. 
+The transfer from operating system memory to the underlying persistent storage happens asynchronously. 
+The sync flag can be turned on for a particular write to make the write operation
 not return until the data being written has been pushed all the way to
 persistent storage. (On Posix systems, this is implemented by calling either
 `fsync(...)` or `fdatasync(...)` or `msync(..., MS_SYNC)` before the write
@@ -105,20 +105,21 @@ operation returns.)
 
 ```c++
 leveldb::WriteOptions write_options;
-write_options.sync = true;
+write_options.sync = true;   //控制 写操作，日志记录的同步磁盘
 db->Put(write_options, ...);
 ```
 
-Asynchronous writes are often more than a thousand times as fast as synchronous
-writes. The downside of asynchronous writes is that a crash of the machine may
+Asynchronous writes are often more than a thousand times快1000倍 as fast as synchronous
+writes. The downside缺点 of asynchronous writes is that a crash of the machine may
 cause the last few updates to be lost. Note that a crash of just the writing
 process (i.e., not a reboot) will not cause any loss since even when sync is
 false, an update is pushed from the process memory into the operating system
-before it is considered done.
+before it is considered done. 在被认为已经完成之前
 
 Asynchronous writes can often be used safely. For example, when loading a large
 amount of data into the database you can handle lost updates by restarting the
-bulk load after a crash. A hybrid scheme is also possible where every Nth write
+bulk load after a crash.  尽量用批处理，这样的批处理同步成本更低
+A hybrid scheme复合方案 is also possible where every Nth write
 is synchronous, and in the event of a crash, the bulk load is restarted just
 after the last synchronous write finished by the previous run. (The synchronous
 write can update a marker that describes where to restart on a crash.)
@@ -126,7 +127,7 @@ write can update a marker that describes where to restart on a crash.)
 `WriteBatch` provides an alternative to asynchronous writes. Multiple updates
 may be placed in the same WriteBatch and applied together using a synchronous
 write (i.e., `write_options.sync` is set to true). The extra cost of the
-synchronous write will be amortized across all of the writes in the batch.
+synchronous write will be amortized平摊 across all of the writes in the batch.
 
 ## Concurrency
 
@@ -306,22 +307,23 @@ version numbers found in the keys to decide how to interpret them.
 
 ## Performance
 
-Performance can be tuned by changing the default values of the types defined in
+Performance can be tuned调整选项 by changing the default values of the types defined in
 `include/options.h`.
 
-### Block size
+### Block size 块大小
 
 leveldb groups adjacent keys together into the same block and such a block is
 the unit of transfer to and from persistent storage. The default block size is
-approximately 4096 uncompressed bytes.  Applications that mostly do bulk scans
-over the contents of the database may wish to increase this size. Applications
-that do a lot of point reads of small values may wish to switch to a smaller
-block size if performance measurements indicate an improvement. There isn't much
-benefit in using blocks smaller than one kilobyte, or larger than a few
-megabytes. Also note that compression will be more effective with larger block
-sizes.
+approximately 4096 uncompressed bytes.  
+Applications that mostly do bulk scans over the contents of the database may wish to increase this size. 
+Applications that do a lot of point reads of small values may wish to switch to a smaller
+block size if performance measurements indicate an improvement. 
 
-### Compression
+There isn't much benefit in using blocks smaller than one kilobyte, or larger than a few
+megabytes. 
+Also note that compression will be more effective with larger block sizes. 大块压缩更有效
+
+### Compression 开启压缩
 
 Each block is individually compressed before being written to persistent
 storage. Compression is on by default since the default compression method is
