@@ -12,32 +12,36 @@
 
 namespace leveldb {
 
-struct BlockContents;
-class Comparator;
+	struct BlockContents;
+
+	class Comparator;
+
 // 解析 block， 读操作是通过 迭代器完成
-class Block {
- public:
-  // Initialize the block with the specified contents.
-  explicit Block(const BlockContents& contents);
+	class Block {
+	public:
+		// Initialize the block with the specified contents.
+		explicit Block(const BlockContents &contents);
 
-  Block(const Block&) = delete;
-  Block& operator=(const Block&) = delete;
+		Block(const Block &) = delete;
 
-  ~Block();
+		Block &operator=(const Block &) = delete;
 
-  size_t size() const { return size_; }
-  Iterator* NewIterator(const Comparator* comparator);
+		~Block();
 
- private:
-  class Iter;
+		size_t size() const { return size_; }
 
-  uint32_t NumRestarts() const;
+		Iterator *NewIterator(const Comparator *comparator);
 
-  const char* data_;
-  size_t size_;
-  uint32_t restart_offset_;  // Offset in data_ of restart array
-  bool owned_;               // Block owns data_[]
-};
+	private:
+		class Iter;
+
+		uint32_t NumRestarts() const;
+
+		const char *data_;
+		size_t size_;
+		uint32_t restart_offset_;  // Offset in data_ of restart array
+		bool owned_;               // Block owns data_[]
+	};
 
 }  // namespace leveldb
 

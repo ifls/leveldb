@@ -136,7 +136,7 @@ static char *FilterCreate(
 		int num_keys,
 		size_t *filter_length) {
 	*filter_length = 4;
-	char *result = (char*)malloc(4);
+	char *result = (char *) malloc(4);
 	memcpy(result, "fake", 4);
 	return result;
 }
@@ -215,7 +215,7 @@ int main() {
 	Free(&err);
 
 	StartPhase("write");
-	leveldb_writebatch_t* batch = leveldb_writebatch_create();
+	leveldb_writebatch_t *batch = leveldb_writebatch_create();
 	leveldb_writebatch_put(batch, "vvv", 3, "xxx1", 4);
 	leveldb_write(db, woptions, batch, &err);
 	CheckCondition(err == NULL);
