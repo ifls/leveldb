@@ -8,7 +8,7 @@
 #include "leveldb/env.h"
 
 namespace leveldb {
-
-Options::Options() : comparator(BytewiseComparator()), env(Env::Default()) {}
+	// 构造函数
+	Options::Options() : comparator(BytewiseComparator()), env(Env::Default()) {}
 
 }  // namespace leveldb
