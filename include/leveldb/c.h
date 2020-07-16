@@ -103,6 +103,7 @@ LEVELDB_EXPORT char *leveldb_get(leveldb_t *db,
 								 size_t *vallen,
 								 char **errptr);
 
+// new DBIter();
 LEVELDB_EXPORT leveldb_iterator_t *leveldb_create_iterator(leveldb_t *db, const leveldb_readoptions_t *options);
 // 创建快照
 LEVELDB_EXPORT const leveldb_snapshot_t *leveldb_create_snapshot(leveldb_t *db);
@@ -121,6 +122,7 @@ LEVELDB_EXPORT void leveldb_approximate_sizes(leveldb_t *db,
 											  const size_t *range_limit_key_len,
 											  uint64_t *sizes);
 
+// 主动 compact, 减少无效数据，提高读写效率
 LEVELDB_EXPORT void leveldb_compact_range(leveldb_t *db,
 										  const char *start_key,
 										  size_t start_key_len,

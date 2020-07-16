@@ -591,6 +591,7 @@ void DBImpl::CompactMemTable() {
 	}
 }
 
+// CompactRange 实际实现
 void DBImpl::CompactRange(const Slice *begin, const Slice *end) {
 	int max_level_with_files = 1;
 	{
@@ -1191,6 +1192,7 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key, std::string *va
 	return s;
 }
 
+// 对数据库的迭代
 Iterator *DBImpl::NewIterator(const ReadOptions &options) {
 	SequenceNumber latest_snapshot;
 	uint32_t seed;

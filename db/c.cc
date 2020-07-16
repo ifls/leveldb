@@ -276,6 +276,7 @@ void leveldb_compact_range(leveldb_t *db,
 						   const char *limit_key,
 						   size_t limit_key_len) {
 	Slice a, b;
+	// db_impl.cc
 	db->rep->CompactRange(
 		// Pass null Slice if corresponding "const char*" is null
 		(start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr), (limit_key

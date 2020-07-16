@@ -1,6 +1,6 @@
 This directory contains interfaces and implementations that isolate the
 rest of the package from platform details.
-
+隔离 不同平台的细节
 Code in the rest of the package includes "port.h" from this directory.
 "port.h" in turn includes a platform specific "port_<platform>.h" file
 that provides the platform specific implementation.
