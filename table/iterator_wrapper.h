@@ -10,10 +10,10 @@
 
 namespace leveldb {
 
-// A internal wrapper class with an interface similar to Iterator that
-// caches the valid() and key() results for an underlying iterator.
-// This can help avoid virtual function calls and also gives better
-// cache locality.
+	// A internal wrapper class with an interface similar to Iterator that
+	// caches the valid() and key() results for an underlying iterator.
+	// This can help avoid virtual function calls and also gives better
+	// cache locality.
 	class IteratorWrapper {
 	public:
 		IteratorWrapper() : iter_(nullptr), valid_(false) {}

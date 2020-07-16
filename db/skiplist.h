@@ -38,7 +38,7 @@ namespace leveldb {
 
 	class Arena;
 
-// 跳表 memtable的实际储存实现
+	// 跳表 memtable的实际储存实现
 	template<typename Key, class Comparator>
 	class SkipList {
 	private:
@@ -150,7 +150,7 @@ namespace leveldb {
 		Random rnd_;
 	};
 
-// Implementation details follow
+	// Implementation details follow
 	template<typename Key, class Comparator>
 	struct SkipList<Key, Comparator>::Node {
 		explicit Node(const Key &k) : key(k) {}
@@ -264,14 +264,14 @@ namespace leveldb {
 		return height;
 	}
 
-// true if key > node.key
+	// true if key > node.key
 	template<typename Key, class Comparator>
 	bool SkipList<Key, Comparator>::KeyIsAfterNode(const Key &key, Node *n) const {
 		// null n is considered infinite
 		return (n != nullptr) && (compare_(n->key, key) < 0);
 	}
 
-// 返回LessOrEqual 也就是prev
+	// 返回LessOrEqual 也就是prev
 	template<typename Key, class Comparator>
 	typename SkipList<Key, Comparator>::Node *
 	SkipList<Key, Comparator>::FindGreaterOrEqual(const Key &key,

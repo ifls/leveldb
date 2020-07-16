@@ -105,10 +105,10 @@ namespace leveldb {
 		CleanupNode cleanup_head_;
 	};
 
-// Return an empty iterator (yields nothing).
+	// Return an empty iterator (yields nothing).
 	LEVELDB_EXPORT Iterator *NewEmptyIterator();
 
-// Return an empty iterator with the specified status.
+	// Return an empty iterator with the specified status.
 	LEVELDB_EXPORT Iterator *NewErrorIterator(const Status &status);
 
 }  // namespace leveldb

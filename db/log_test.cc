@@ -13,8 +13,8 @@
 namespace leveldb {
 	namespace log {
 
-// Construct a string of the specified length made out of the supplied
-// partial string.
+		// Construct a string of the specified length made out of the supplied
+		// partial string.
 		static std::string BigString(const std::string &partial_string, size_t n) {
 			std::string result;
 			while (result.size() < n) {
@@ -24,14 +24,14 @@ namespace leveldb {
 			return result;
 		}
 
-// Construct a string from a number
+		// Construct a string from a number
 		static std::string NumberString(int n) {
 			char buf[50];
 			std::snprintf(buf, sizeof(buf), "%d.", n);
 			return std::string(buf);
 		}
 
-// Return a skewed potentially long string
+		// Return a skewed potentially long string
 		static std::string RandomSkewedString(int i, Random *rnd) {
 			return BigString(NumberString(i), rnd->Skewed(17));
 		}
@@ -258,7 +258,7 @@ namespace leveldb {
 				3 * log::kBlockSize,
 		};
 
-// LogTest::initial_offset_last_record_offsets_ must be defined before this.
+		// LogTest::initial_offset_last_record_offsets_ must be defined before this.
 		int LogTest::num_initial_offset_records_ =
 				sizeof(LogTest::initial_offset_last_record_offsets_) / sizeof(uint64_t);
 
@@ -365,7 +365,7 @@ namespace leveldb {
 			ASSERT_EQ("EOF", Read());
 		}
 
-// Tests of all the error paths in log_reader.cc follow:
+		// Tests of all the error paths in log_reader.cc follow:
 
 		TEST_F(LogTest, ReadError) {
 			Write("foo");

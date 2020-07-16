@@ -23,8 +23,8 @@
 
 namespace leveldb {
 
-// Return reverse of "key".
-// Used to test non-lexicographic comparators.
+	// Return reverse of "key".
+	// Used to test non-lexicographic comparators.
 	static std::string Reverse(const Slice &key) {
 		std::string str(key.ToString());
 		std::string rev("");
@@ -74,7 +74,7 @@ namespace leveldb {
 		}
 	}
 
-// An STL comparator that uses a Comparator
+	// An STL comparator that uses a Comparator
 	namespace {
 		struct STLLessThan {
 			const Comparator *cmp;
@@ -138,8 +138,8 @@ namespace leveldb {
 
 	typedef std::map<std::string, std::string, STLLessThan> KVMap;
 
-// Helper class for tests to unify the interface between
-// BlockBuilder/TableBuilder and Block/Table.
+	// Helper class for tests to unify the interface between
+	// BlockBuilder/TableBuilder and Block/Table.
 	class Constructor {
 	public:
 		explicit Constructor(const Comparator *cmp) : data_(STLLessThan(cmp)) {}
@@ -265,7 +265,7 @@ namespace leveldb {
 		TableConstructor();
 	};
 
-// A helper class that converts internal format keys into user keys
+	// A helper class that converts internal format keys into user keys
 	class KeyConvertingIterator : public Iterator {
 	public:
 		explicit KeyConvertingIterator(Iterator *iter) : iter_(iter) {}
@@ -633,7 +633,7 @@ namespace leveldb {
 		Constructor *constructor_;
 	};
 
-// Test empty table/block.
+	// Test empty table/block.
 	TEST_F(Harness, Empty) {
 		for (int i = 0; i < kNumTestArgs; i++) {
 			Init(kTestArgList[i]);
@@ -642,9 +642,9 @@ namespace leveldb {
 		}
 	}
 
-// Special test for a block with no restart entries.  The C++ leveldb
-// code never generates such blocks, but the Java version of leveldb
-// seems to.
+	// Special test for a block with no restart entries.  The C++ leveldb
+	// code never generates such blocks, but the Java version of leveldb
+	// seems to.
 	TEST_F(Harness, ZeroRestartPointsInBlock) {
 		char data[sizeof(uint32_t)];
 		memset(data, 0, sizeof(data));
@@ -663,7 +663,7 @@ namespace leveldb {
 		delete iter;
 	}
 
-// Test the empty key
+	// Test the empty key
 	TEST_F(Harness, SimpleEmptyKey) {
 		for (int i = 0; i < kNumTestArgs; i++) {
 			Init(kTestArgList[i]);

@@ -125,30 +125,30 @@ namespace leveldb {
 		}
 	}
 
-// We want to make sure that with a single writer and multiple
-// concurrent readers (with no synchronization other than when a
-// reader's iterator is created), the reader always observes all the
-// data that was present in the skip list when the iterator was
-// constructed.  Because insertions are happening concurrently, we may
-// also observe new values that were inserted since the iterator was
-// constructed, but we should never miss any values that were present
-// at iterator construction time.
-//
-// We generate multi-part keys:
-//     <key,gen,hash>
-// where:
-//     key is in range [0..K-1]
-//     gen is a generation number for key
-//     hash is hash(key,gen)
-//
-// The insertion code picks a random key, sets gen to be 1 + the last
-// generation number inserted for that key, and sets hash to Hash(key,gen).
-//
-// At the beginning of a read, we snapshot the last inserted
-// generation number for each key.  We then iterate, including random
-// calls to Next() and Seek().  For every key we encounter, we
-// check that it is either expected given the initial snapshot or has
-// been concurrently added since the iterator started.
+	// We want to make sure that with a single writer and multiple
+	// concurrent readers (with no synchronization other than when a
+	// reader's iterator is created), the reader always observes all the
+	// data that was present in the skip list when the iterator was
+	// constructed.  Because insertions are happening concurrently, we may
+	// also observe new values that were inserted since the iterator was
+	// constructed, but we should never miss any values that were present
+	// at iterator construction time.
+	//
+	// We generate multi-part keys:
+	//     <key,gen,hash>
+	// where:
+	//     key is in range [0..K-1]
+	//     gen is a generation number for key
+	//     hash is hash(key,gen)
+	//
+	// The insertion code picks a random key, sets gen to be 1 + the last
+	// generation number inserted for that key, and sets hash to Hash(key,gen).
+	//
+	// At the beginning of a read, we snapshot the last inserted
+	// generation number for each key.  We then iterate, including random
+	// calls to Next() and Seek().  For every key we encounter, we
+	// check that it is either expected given the initial snapshot or has
+	// been concurrently added since the iterator started.
 	class ConcurrentTest {
 	private:
 		static constexpr uint32_t K = 4;
@@ -285,11 +285,11 @@ namespace leveldb {
 		}
 	};
 
-// Needed when building in C++11 mode.
+	// Needed when building in C++11 mode.
 	constexpr uint32_t ConcurrentTest::K;
 
-// Simple test that does single-threaded testing of the ConcurrentTest
-// scaffolding.
+	// Simple test that does single-threaded testing of the ConcurrentTest
+	// scaffolding.
 	TEST(SkipTest, ConcurrentWithoutThreads) {
 		ConcurrentTest test;
 		Random rnd(test::RandomSeed());

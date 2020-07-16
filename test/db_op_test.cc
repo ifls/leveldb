@@ -167,7 +167,7 @@ int main() {
 	cmp = leveldb_comparator_create(NULL, CmpDestroy, CmpCompare, CmpName);
 	env = leveldb_create_default_env();
 	cache = leveldb_cache_create_lru(100000);
-//	dbname = leveldb_env_get_test_directory(env);
+	//	dbname = leveldb_env_get_test_directory(env);
 	std::string ttstr = "xxx";
 	dbname = ttstr.c_str();
 	CheckCondition(dbname != NULL);

@@ -45,7 +45,7 @@ namespace leveldb {
 
 		class CondVar;
 
-// Thinly wraps std::mutex.
+		// Thinly wraps std::mutex.
 		class LOCKABLE Mutex {
 		public:
 			Mutex() = default;
@@ -68,7 +68,7 @@ namespace leveldb {
 			std::mutex mu_;
 		};
 
-// Thinly wraps std::condition_variable.
+		// Thinly wraps std::condition_variable.
 		class CondVar {
 		public:
 			explicit CondVar(Mutex *mu) : mu_(mu) { assert(mu != nullptr); }

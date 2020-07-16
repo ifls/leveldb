@@ -25,15 +25,15 @@ namespace leveldb {
 		return options->max_file_size;
 	}
 
-// Maximum bytes of overlaps in grandparent (i.e., level+2) before we
-// stop building a single file in a level->level+1 compaction.
+	// Maximum bytes of overlaps in grandparent (i.e., level+2) before we
+	// stop building a single file in a level->level+1 compaction.
 	static int64_t MaxGrandParentOverlapBytes(const Options *options) {
 		return 10 * TargetFileSize(options);
 	}
 
-// Maximum number of bytes in all compacted files.  We avoid expanding
-// the lower level file set of a compaction if it would make the
-// total compaction cover more than this many bytes.
+	// Maximum number of bytes in all compacted files.  We avoid expanding
+	// the lower level file set of a compaction if it would make the
+	// total compaction cover more than this many bytes.
 	static int64_t ExpandedCompactionByteSizeLimit(const Options *options) {
 		return 25 * TargetFileSize(options);
 	}
@@ -84,7 +84,7 @@ namespace leveldb {
 		}
 	}
 
-// 二分搜索 1层 到 更多层的文件
+	// 二分搜索 1层 到 更多层的文件
 	int FindFile(const InternalKeyComparator &icmp,
 				 const std::vector<FileMetaData *> &files, const Slice &key) {
 		uint32_t left = 0;
@@ -157,11 +157,11 @@ namespace leveldb {
 		return !BeforeFile(ucmp, largest_user_key, files[index]);
 	}
 
-// An internal iterator.  For a given version/level pair, yields
-// information about the files in the level.  For a given entry, key()
-// is the largest key that occurs in the file, and value() is an
-// 16-byte value containing the file number and file size, both
-// encoded using EncodeFixed64.
+	// An internal iterator.  For a given version/level pair, yields
+	// information about the files in the level.  For a given entry, key()
+	// is the largest key that occurs in the file, and value() is an
+	// 16-byte value containing the file number and file size, both
+	// encoded using EncodeFixed64.
 	class Version::LevelFileNumIterator : public Iterator {
 	public:
 		LevelFileNumIterator(const InternalKeyComparator &icmp,
@@ -255,7 +255,7 @@ namespace leveldb {
 		}
 	}
 
-// Callback from TableCache::Get()
+	// Callback from TableCache::Get()
 	namespace {
 		enum SaverState {
 			kNotFound,
@@ -419,7 +419,7 @@ namespace leveldb {
 		return state.found ? state.s : Status::NotFound(Slice());
 	}
 
-// 被 查找到 一次， 如果 <= 0 就标记需要进行合并
+	// 被 查找到 一次， 如果 <= 0 就标记需要进行合并
 	bool Version::UpdateStats(const GetStats &stats) {
 		FileMetaData *f = stats.seek_file;
 		if (f != nullptr) {
@@ -515,7 +515,7 @@ namespace leveldb {
 		return level;
 	}
 
-// Store in "*inputs" all files in "level" that overlap [begin,end]
+	// Store in "*inputs" all files in "level" that overlap [begin,end]
 	void Version::GetOverlappingInputs(int level, const InternalKey *begin,
 									   const InternalKey *end,
 									   std::vector<FileMetaData *> *inputs) {
@@ -585,9 +585,9 @@ namespace leveldb {
 		return r;
 	}
 
-// A helper class so we can efficiently apply a whole sequence
-// of edits to a particular state without creating intermediate
-// Versions that contain full copies of the intermediate state.
+	// A helper class so we can efficiently apply a whole sequence
+	// of edits to a particular state without creating intermediate
+	// Versions that contain full copies of the intermediate state.
 	class VersionSet::Builder {
 	private:
 		// Helper to sort by v->files_[file_number].smallest
@@ -782,7 +782,7 @@ namespace leveldb {
 		delete descriptor_file_;
 	}
 
-// 将version 插入到双向链表，
+	// 将version 插入到双向链表，
 	void VersionSet::AppendVersion(Version *v) {
 		// Make "v" current
 		assert(v->refs_ == 0);
@@ -1212,9 +1212,9 @@ namespace leveldb {
 		return result;
 	}
 
-// Stores the minimal range that covers all entries in inputs in
-// *smallest, *largest.
-// REQUIRES: inputs is not empty
+	// Stores the minimal range that covers all entries in inputs in
+	// *smallest, *largest.
+	// REQUIRES: inputs is not empty
 	void VersionSet::GetRange(const std::vector<FileMetaData *> &inputs,
 							  InternalKey *smallest, InternalKey *largest) {
 		assert(!inputs.empty());
@@ -1236,9 +1236,9 @@ namespace leveldb {
 		}
 	}
 
-// Stores the minimal range that covers all entries in inputs1 and inputs2
-// in *smallest, *largest.
-// REQUIRES: inputs is not empty
+	// Stores the minimal range that covers all entries in inputs1 and inputs2
+	// in *smallest, *largest.
+	// REQUIRES: inputs is not empty
 	void VersionSet::GetRange2(const std::vector<FileMetaData *> &inputs1,
 							   const std::vector<FileMetaData *> &inputs2,
 							   InternalKey *smallest, InternalKey *largest) {
@@ -1337,8 +1337,8 @@ namespace leveldb {
 		return c;
 	}
 
-// Finds the largest key in a vector of files. Returns true if files it not
-// empty.
+	// Finds the largest key in a vector of files. Returns true if files it not
+	// empty.
 	bool FindLargestKey(const InternalKeyComparator &icmp,
 						const std::vector<FileMetaData *> &files,
 						InternalKey *largest_key) {
@@ -1355,8 +1355,8 @@ namespace leveldb {
 		return true;
 	}
 
-// Finds minimum file b2=(l2, u2) in level file for which l2 > u1 and
-// user_key(l2) = user_key(u1)
+	// Finds minimum file b2=(l2, u2) in level file for which l2 > u1 and
+	// user_key(l2) = user_key(u1)
 	FileMetaData *FindSmallestBoundaryFile(
 			const InternalKeyComparator &icmp,
 			const std::vector<FileMetaData *> &level_files,
@@ -1377,20 +1377,20 @@ namespace leveldb {
 		return smallest_boundary_file;
 	}
 
-// Extracts the largest file b1 from |compaction_files| and then searches for a
-// b2 in |level_files| for which user_key(u1) = user_key(l2). If it finds such a
-// file b2 (known as a boundary file) it adds it to |compaction_files| and then
-// searches again using this new upper bound.
-//
-// If there are two blocks, b1=(l1, u1) and b2=(l2, u2) and
-// user_key(u1) = user_key(l2), and if we compact b1 but not b2 then a
-// subsequent get operation will yield an incorrect result because it will
-// return the record from b2 in level i rather than from b1 because it searches
-// level by level for records matching the supplied user key.
-//
-// parameters:
-//   in     level_files:      List of files to search for boundary files.
-//   in/out compaction_files: List of files to extend by adding boundary files.
+	// Extracts the largest file b1 from |compaction_files| and then searches for a
+	// b2 in |level_files| for which user_key(u1) = user_key(l2). If it finds such a
+	// file b2 (known as a boundary file) it adds it to |compaction_files| and then
+	// searches again using this new upper bound.
+	//
+	// If there are two blocks, b1=(l1, u1) and b2=(l2, u2) and
+	// user_key(u1) = user_key(l2), and if we compact b1 but not b2 then a
+	// subsequent get operation will yield an incorrect result because it will
+	// return the record from b2 in level i rather than from b1 because it searches
+	// level by level for records matching the supplied user key.
+	//
+	// parameters:
+	//   in     level_files:      List of files to search for boundary files.
+	//   in/out compaction_files: List of files to extend by adding boundary files.
 	void AddBoundaryInputs(const InternalKeyComparator &icmp,
 						   const std::vector<FileMetaData *> &level_files,
 						   std::vector<FileMetaData *> *compaction_files) {

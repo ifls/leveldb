@@ -9,7 +9,7 @@ namespace leveldb {
 
 	class EnvPosixTest;
 
-// A helper for the POSIX Env to facilitate testing.
+	// A helper for the POSIX Env to facilitate testing.
 	class EnvPosixTestHelper {
 	private:
 		friend class EnvPosixTest;

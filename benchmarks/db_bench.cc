@@ -117,7 +117,7 @@ namespace leveldb {
 	namespace {
 		leveldb::Env *g_env = nullptr;
 
-// Helper for quickly generating random data.
+		// Helper for quickly generating random data.
 		class RandomGenerator {
 		private:
 			std::string data_;
@@ -278,7 +278,7 @@ namespace leveldb {
 			}
 		};
 
-// State shared by all concurrent executions of the same benchmark.
+		// State shared by all concurrent executions of the same benchmark.
 		struct SharedState {
 			port::Mutex mu;
 			port::CondVar cv GUARDED_BY(mu);
@@ -298,7 +298,7 @@ namespace leveldb {
 					: cv(&mu), total(total), num_initialized(0), num_done(0), start(false) {}
 		};
 
-// Per-thread state for concurrent executions of the same benchmark.
+		// Per-thread state for concurrent executions of the same benchmark.
 		struct ThreadState {
 			int tid;      // 0..n-1 when running in n threads
 			Random rand;  // Has different seeds for different threads

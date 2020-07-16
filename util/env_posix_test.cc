@@ -23,39 +23,39 @@
 
 namespace {
 
-// Exit codes for the helper process spawned by TestCloseOnExec* tests.
-// Useful for debugging test failures.
+	// Exit codes for the helper process spawned by TestCloseOnExec* tests.
+	// Useful for debugging test failures.
 	constexpr int kTextCloseOnExecHelperExecFailedCode = 61;
 	constexpr int kTextCloseOnExecHelperDup2FailedCode = 62;
 	constexpr int kTextCloseOnExecHelperFoundOpenFdCode = 63;
 
-// Global set by main() and read in TestCloseOnExec.
-//
-// The argv[0] value is stored in a std::vector instead of a std::string because
-// std::string does not return a mutable pointer to its buffer until C++17.
-//
-// The vector stores the string pointed to by argv[0], plus the trailing null.
+	// Global set by main() and read in TestCloseOnExec.
+	//
+	// The argv[0] value is stored in a std::vector instead of a std::string because
+	// std::string does not return a mutable pointer to its buffer until C++17.
+	//
+	// The vector stores the string pointed to by argv[0], plus the trailing null.
 	std::vector<char> *GetArgvZero() {
 		static std::vector<char> program_name;
 		return &program_name;
 	}
 
-// Command-line switch used to run this test as the CloseOnExecSwitch helper.
+	// Command-line switch used to run this test as the CloseOnExecSwitch helper.
 	static const char kTestCloseOnExecSwitch[] = "--test-close-on-exec-helper";
 
-// Executed in a separate process by TestCloseOnExec* tests.
-//
-// main() delegates to this function when the test executable is launched with
-// a special command-line switch. TestCloseOnExec* tests fork()+exec() the test
-// executable and pass the special command-line switch.
-//
+	// Executed in a separate process by TestCloseOnExec* tests.
+	//
+	// main() delegates to this function when the test executable is launched with
+	// a special command-line switch. TestCloseOnExec* tests fork()+exec() the test
+	// executable and pass the special command-line switch.
+	//
 
-// main() delegates to this function when the test executable is launched with
-// a special command-line switch. TestCloseOnExec* tests fork()+exec() the test
-// executable and pass the special command-line switch.
-//
-// When main() delegates to this function, the process probes whether a given
-// file descriptor is open, and communicates the result via its exit code.
+	// main() delegates to this function when the test executable is launched with
+	// a special command-line switch. TestCloseOnExec* tests fork()+exec() the test
+	// executable and pass the special command-line switch.
+	//
+	// When main() delegates to this function, the process probes whether a given
+	// file descriptor is open, and communicates the result via its exit code.
 	int TestCloseOnExecHelperMain(char *pid_arg) {
 		int fd = std::atoi(pid_arg);
 		// When given the same file descriptor twice, dup2() returns -1 if the
@@ -73,9 +73,9 @@ namespace {
 		return 0;
 	}
 
-// File descriptors are small non-negative integers.
-//
-// Returns void so the implementation can use ASSERT_EQ.
+	// File descriptors are small non-negative integers.
+	//
+	// Returns void so the implementation can use ASSERT_EQ.
 	void GetMaxFileDescriptor(int *result_fd) {
 		// Get the maximum file descriptor number.
 		::rlimit fd_rlimit;
@@ -83,9 +83,9 @@ namespace {
 		*result_fd = fd_rlimit.rlim_cur;
 	}
 
-// Iterates through all possible FDs and returns the currently open ones.
-//
-// Returns void so the implementation can use ASSERT_EQ.
+	// Iterates through all possible FDs and returns the currently open ones.
+	//
+	// Returns void so the implementation can use ASSERT_EQ.
 	void GetOpenFileDescriptors(std::unordered_set<int> *open_fds) {
 		int max_fd = 0;
 		GetMaxFileDescriptor(&max_fd);
@@ -104,12 +104,12 @@ namespace {
 		}
 	}
 
-// Finds an FD open since a previous call to GetOpenFileDescriptors().
-//
-// |baseline_open_fds| is the result of a previous GetOpenFileDescriptors()
-// call. Assumes that exactly one FD was opened since that call.
-//
-// Returns void so the implementation can use ASSERT_EQ.
+	// Finds an FD open since a previous call to GetOpenFileDescriptors().
+	//
+	// |baseline_open_fds| is the result of a previous GetOpenFileDescriptors()
+	// call. Assumes that exactly one FD was opened since that call.
+	//
+	// Returns void so the implementation can use ASSERT_EQ.
 	void GetNewlyOpenedFileDescriptor(
 			const std::unordered_set<int> &baseline_open_fds, int *result_fd) {
 		std::unordered_set<int> open_fds;
@@ -124,7 +124,7 @@ namespace {
 		*result_fd = *open_fds.begin();
 	}
 
-// Check that a fork()+exec()-ed child process does not have an extra open FD.
+	// Check that a fork()+exec()-ed child process does not have an extra open FD.
 	void CheckCloseOnExecDoesNotLeakFDs(
 			const std::unordered_set<int> &baseline_open_fds) {
 		// Prepare the argument list for the child process.

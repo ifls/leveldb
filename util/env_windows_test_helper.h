@@ -9,7 +9,7 @@ namespace leveldb {
 
 	class EnvWindowsTest;
 
-// A helper for the Windows Env to facilitate testing.
+	// A helper for the Windows Env to facilitate testing.
 	class EnvWindowsTestHelper {
 	private:
 		friend class CorruptionTest;

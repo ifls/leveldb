@@ -63,18 +63,18 @@ namespace leveldb {
 		return dbname + "/LOG";
 	}
 
-// Return the name of the old info log file for "dbname".
+	// Return the name of the old info log file for "dbname".
 	std::string OldInfoLogFileName(const std::string &dbname) {
 		return dbname + "/LOG.old";
 	}
 
-// Owned filenames have the form:
-//    dbname/CURRENT
-//    dbname/LOCK
-//    dbname/LOG
-//    dbname/LOG.old
-//    dbname/MANIFEST-[0-9]+
-//    dbname/[0-9]+.(log|sst|ldb)
+	// Owned filenames have the form:
+	//    dbname/CURRENT
+	//    dbname/LOCK
+	//    dbname/LOG
+	//    dbname/LOG.old
+	//    dbname/MANIFEST-[0-9]+
+	//    dbname/[0-9]+.(log|sst|ldb)
 	bool ParseFileName(const std::string &filename, uint64_t *number, FileType *type) {
 		Slice rest(filename);
 		if (rest == "CURRENT") {

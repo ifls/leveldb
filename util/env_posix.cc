@@ -39,16 +39,16 @@ namespace leveldb {
 
 	namespace {
 
-// Set by EnvPosixTestHelper::SetReadOnlyMMapLimit() and MaxOpenFiles().
+		// Set by EnvPosixTestHelper::SetReadOnlyMMapLimit() and MaxOpenFiles().
 		int g_open_read_only_file_limit = -1;
 
-// Up to 1000 mmap regions for 64-bit binaries; none for 32-bit.
+		// Up to 1000 mmap regions for 64-bit binaries; none for 32-bit.
 		constexpr const int kDefaultMmapLimit = (sizeof(void *) >= 8) ? 1000 : 0;
 
-// Can be set using EnvPosixTestHelper::SetReadOnlyMMapLimit().
+		// Can be set using EnvPosixTestHelper::SetReadOnlyMMapLimit().
 		int g_mmap_limit = kDefaultMmapLimit;
 
-// Common flags defined for all posix open operations
+		// Common flags defined for all posix open operations
 #if defined(HAVE_O_CLOEXEC)
 		constexpr const int kOpenBaseFlags = O_CLOEXEC;
 #else
@@ -65,10 +65,10 @@ namespace leveldb {
 			}
 		}
 
-// Helper class to limit resource usage to avoid exhaustion.
-// Currently used to limit read-only file descriptors and mmap file usage
-// so that we do not run out of file descriptors or virtual memory, or run into
-// kernel performance problems for very large databases.
+		// Helper class to limit resource usage to avoid exhaustion.
+		// Currently used to limit read-only file descriptors and mmap file usage
+		// so that we do not run out of file descriptors or virtual memory, or run into
+		// kernel performance problems for very large databases.
 		class Limiter {
 		public:
 			// Limit maximum number of resources to |max_acquires|.
@@ -102,10 +102,10 @@ namespace leveldb {
 			std::atomic<int> acquires_allowed_;
 		};
 
-// Implements sequential read access in a file using read().
-//
-// Instances of this class are thread-friendly but not thread-safe, as required
-// by the SequentialFile API.
+		// Implements sequential read access in a file using read().
+		//
+		// Instances of this class are thread-friendly but not thread-safe, as required
+		// by the SequentialFile API.
 		class PosixSequentialFile final : public SequentialFile {
 		public:
 			PosixSequentialFile(std::string filename, int fd)
@@ -142,11 +142,11 @@ namespace leveldb {
 			const std::string filename_;
 		};
 
-// Implements random read access in a file using pread().
-//
-// Instances of this class are thread-safe, as required by the RandomAccessFile
-// API. Instances are immutable and Read() only calls thread-safe library
-// functions.
+		// Implements random read access in a file using pread().
+		//
+		// Instances of this class are thread-safe, as required by the RandomAccessFile
+		// API. Instances are immutable and Read() only calls thread-safe library
+		// functions.
 		class PosixRandomAccessFile final : public RandomAccessFile {
 		public:
 			// The new instance takes ownership of |fd|. |fd_limiter| must outlive this
@@ -204,11 +204,11 @@ namespace leveldb {
 			const std::string filename_;
 		};
 
-// Implements random read access in a file using mmap().
-//
-// Instances of this class are thread-safe, as required by the RandomAccessFile
-// API. Instances are immutable and Read() only calls thread-safe library
-// functions.
+		// Implements random read access in a file using mmap().
+		//
+		// Instances of this class are thread-safe, as required by the RandomAccessFile
+		// API. Instances are immutable and Read() only calls thread-safe library
+		// functions.
 		class PosixMmapReadableFile final : public RandomAccessFile {
 		public:
 			// mmap_base[0, length-1] points to the memory-mapped contents of the file. It
@@ -248,7 +248,7 @@ namespace leveldb {
 			const std::string filename_;
 		};
 
-// 日志具体实现类代码
+		// 日志具体实现类代码
 		class PosixWritableFile final : public WritableFile {
 		public:
 			PosixWritableFile(std::string filename, int fd)
@@ -461,7 +461,7 @@ namespace leveldb {
 			return ::fcntl(fd, F_SETLK, &file_lock_info);
 		}
 
-// Instances are thread-safe because they are immutable.
+		// Instances are thread-safe because they are immutable.
 		class PosixFileLock : public FileLock {
 		public:
 			PosixFileLock(int fd, std::string filename)
@@ -476,13 +476,13 @@ namespace leveldb {
 			const std::string filename_;
 		};
 
-// Tracks the files locked by PosixEnv::LockFile().
-//
-// We maintain a separate set instead of relying on fcntl(F_SETLK) because
-// fcntl(F_SETLK) does not provide any protection against multiple uses from the
-// same process.
-//
-// Instances are thread-safe because all member data is guarded by a mutex.
+		// Tracks the files locked by PosixEnv::LockFile().
+		//
+		// We maintain a separate set instead of relying on fcntl(F_SETLK) because
+		// fcntl(F_SETLK) does not provide any protection against multiple uses from the
+		// same process.
+		//
+		// Instances are thread-safe because all member data is guarded by a mutex.
 		class PosixLockTable {
 		public:
 			bool Insert(const std::string &fname) LOCKS_EXCLUDED(mu_) {
@@ -767,10 +767,10 @@ namespace leveldb {
 			Limiter fd_limiter_;    // Thread-safe.
 		};
 
-// Return the maximum number of concurrent mmaps.
+		// Return the maximum number of concurrent mmaps.
 		int MaxMmaps() { return g_mmap_limit; }
 
-// Return the maximum number of read-only files to keep open.
+		// Return the maximum number of read-only files to keep open.
 		int MaxOpenFiles() {
 			if (g_open_read_only_file_limit >= 0) {
 				return g_open_read_only_file_limit;
@@ -838,18 +838,18 @@ namespace leveldb {
 
 	namespace {
 
-// Wraps an Env instance whose destructor is never created.
-//
-// Intended usage:
-//   using PlatformSingletonEnv = SingletonEnv<PlatformEnv>;
-//   void ConfigurePosixEnv(int param) {
-//     PlatformSingletonEnv::AssertEnvNotInitialized();
-//     // set global configuration flags.
-//   }
-//   Env* Env::Default() {
-//     static PlatformSingletonEnv default_env;
-//     return default_env.env();
-//   }
+		// Wraps an Env instance whose destructor is never created.
+		//
+		// Intended usage:
+		//   using PlatformSingletonEnv = SingletonEnv<PlatformEnv>;
+		//   void ConfigurePosixEnv(int param) {
+		//     PlatformSingletonEnv::AssertEnvNotInitialized();
+		//     // set global configuration flags.
+		//   }
+		//   Env* Env::Default() {
+		//     static PlatformSingletonEnv default_env;
+		//     return default_env.env();
+		//   }
 		template<typename EnvType>
 		class SingletonEnv {
 		public:

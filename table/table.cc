@@ -148,8 +148,8 @@ namespace leveldb {
 		cache->Release(handle);
 	}
 
-// Convert an index iterator value (i.e., an encoded BlockHandle)
-// into an iterator over the contents of the corresponding block.
+	// Convert an index iterator value (i.e., an encoded BlockHandle)
+	// into an iterator over the contents of the corresponding block.
 	Iterator *Table::BlockReader(void *arg, const ReadOptions &options,
 								 const Slice &index_value) {
 		Table *table = reinterpret_cast<Table *>(arg);

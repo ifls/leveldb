@@ -26,9 +26,9 @@ namespace leveldb {
 
 	class TableCache;
 
-// A Table is a sorted map from strings to strings.  Tables are
-// immutable and persistent.  A Table may be safely accessed from
-// multiple threads without external synchronization.
+	// A Table is a sorted map from strings to strings.  Tables are
+	// immutable and persistent.  A Table may be safely accessed from
+	// multiple threads without external synchronization.
 	class LEVELDB_EXPORT Table {
 	public:
 		// Attempt to open the table that is stored in bytes [0..file_size)

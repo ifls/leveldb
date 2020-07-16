@@ -87,23 +87,23 @@ namespace leveldb {
 		return key.user_key.size() + 8;
 	}
 
-// Append the serialization of "key" to *result.
+	// Append the serialization of "key" to *result.
 	void AppendInternalKey(std::string *result, const ParsedInternalKey &key);
 
-// Attempt to parse an internal key from "internal_key".  On success,
-// stores the parsed data in "*result", and returns true.
-//
-// On error, returns false, leaves "*result" in an undefined state.
+	// Attempt to parse an internal key from "internal_key".  On success,
+	// stores the parsed data in "*result", and returns true.
+	//
+	// On error, returns false, leaves "*result" in an undefined state.
 	bool ParseInternalKey(const Slice &internal_key, ParsedInternalKey *result);
 
-// Returns the user key portion of an internal key.
+	// Returns the user key portion of an internal key.
 	inline Slice ExtractUserKey(const Slice &internal_key) {
 		assert(internal_key.size() >= 8);
 		return Slice(internal_key.data(), internal_key.size() - 8);
 	}
 
-// A comparator for internal keys that uses a specified comparator for
-// the user key portion and breaks ties by decreasing sequence number.
+	// A comparator for internal keys that uses a specified comparator for
+	// the user key portion and breaks ties by decreasing sequence number.
 	class InternalKeyComparator : public Comparator {
 	private:
 		const Comparator *user_comparator_;
@@ -125,7 +125,7 @@ namespace leveldb {
 		int Compare(const InternalKey &a, const InternalKey &b) const;
 	};
 
-// Filter policy wrapper that converts from internal keys to user keys
+	// Filter policy wrapper that converts from internal keys to user keys
 	class InternalFilterPolicy : public FilterPolicy {
 	private:
 		const FilterPolicy *const user_policy_;
@@ -140,9 +140,9 @@ namespace leveldb {
 		bool KeyMayMatch(const Slice &key, const Slice &filter) const override;
 	};
 
-// Modules in this directory should keep internal keys wrapped inside
-// the following class instead of plain strings so that we do not
-// incorrectly use string comparisons instead of an InternalKeyComparator.
+	// Modules in this directory should keep internal keys wrapped inside
+	// the following class instead of plain strings so that we do not
+	// incorrectly use string comparisons instead of an InternalKeyComparator.
 	class InternalKey {
 	private:
 		std::string rep_;
@@ -192,7 +192,7 @@ namespace leveldb {
 		return (c <= static_cast<uint8_t>(kTypeValue));
 	}
 
-// A helper class useful for DBImpl::Get()
+	// A helper class useful for DBImpl::Get()
 	class LookupKey {
 	public:
 		// Initialize *this for looking up user_key at a snapshot with

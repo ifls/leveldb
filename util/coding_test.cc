@@ -51,7 +51,7 @@ namespace leveldb {
 		}
 	}
 
-// Test that encoding routines generate little-endian encodings
+	// Test that encoding routines generate little-endian encodings
 	TEST(Coding, EncodingOutput) {
 		std::string dst;
 		PutFixed32(&dst, 0x04030201);

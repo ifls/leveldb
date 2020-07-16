@@ -19,7 +19,7 @@
 
 namespace leveldb {
 
-// Standard Put... routines append to a string
+	// Standard Put... routines append to a string
 	void PutFixed32(std::string *dst, uint32_t value);
 
 	void PutFixed64(std::string *dst, uint64_t value);
@@ -30,34 +30,34 @@ namespace leveldb {
 
 	void PutLengthPrefixedSlice(std::string *dst, const Slice &value);
 
-// Standard Get... routines parse a value from the beginning of a Slice
-// and advance the slice past the parsed value.
+	// Standard Get... routines parse a value from the beginning of a Slice
+	// and advance the slice past the parsed value.
 	bool GetVarint32(Slice *input, uint32_t *value);
 
 	bool GetVarint64(Slice *input, uint64_t *value);
 
 	bool GetLengthPrefixedSlice(Slice *input, Slice *result);
 
-// Pointer-based variants of GetVarint...  These either store a value
-// in *v and return a pointer just past the parsed value, or return
-// nullptr on error.  These routines only look at bytes in the range
-// [p..limit-1]
+	// Pointer-based variants of GetVarint...  These either store a value
+	// in *v and return a pointer just past the parsed value, or return
+	// nullptr on error.  These routines only look at bytes in the range
+	// [p..limit-1]
 	const char *GetVarint32Ptr(const char *p, const char *limit, uint32_t *v);
 
 	const char *GetVarint64Ptr(const char *p, const char *limit, uint64_t *v);
 
-// Returns the length of the varint32 or varint64 encoding of "v"
+	// Returns the length of the varint32 or varint64 encoding of "v"
 	int VarintLength(uint64_t v);
 
-// Lower-level versions of Put... that write directly into a character buffer
-// and return a pointer just past the last byte written.
-// REQUIRES: dst has enough space for the value being written
+	// Lower-level versions of Put... that write directly into a character buffer
+	// and return a pointer just past the last byte written.
+	// REQUIRES: dst has enough space for the value being written
 	char *EncodeVarint32(char *dst, uint32_t value);
 
 	char *EncodeVarint64(char *dst, uint64_t value);
 
-// Lower-level versions of Put... that write directly into a character buffer
-// REQUIRES: dst has enough space for the value being written
+	// Lower-level versions of Put... that write directly into a character buffer
+	// REQUIRES: dst has enough space for the value being written
 
 	inline void EncodeFixed32(char *dst, uint32_t value) {
 		uint8_t *const buffer = reinterpret_cast<uint8_t *>(dst);
@@ -83,8 +83,8 @@ namespace leveldb {
 		buffer[7] = static_cast<uint8_t>(value >> 56);
 	}
 
-// Lower-level versions of Get... that read directly from a character buffer
-// without any bounds checking.
+	// Lower-level versions of Get... that read directly from a character buffer
+	// without any bounds checking.
 
 	inline uint32_t DecodeFixed32(const char *ptr) {
 		const uint8_t *const buffer = reinterpret_cast<const uint8_t *>(ptr);
@@ -111,7 +111,7 @@ namespace leveldb {
 			   (static_cast<uint64_t>(buffer[7]) << 56);
 	}
 
-// Internal routine for use by fallback path of GetVarint32Ptr
+	// Internal routine for use by fallback path of GetVarint32Ptr
 	const char *GetVarint32PtrFallback(const char *p, const char *limit, uint32_t *value);
 
 	// [p, limit) 首尾指针

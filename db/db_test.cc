@@ -70,7 +70,7 @@ namespace leveldb {
 		}
 	}  // namespace
 
-// Test Env to override default Env behavior for testing.
+	// Test Env to override default Env behavior for testing.
 	class TestEnv : public EnvWrapper {
 	public:
 		explicit TestEnv(Env *base) : EnvWrapper(base), ignore_dot_files_(false) {}
@@ -100,7 +100,7 @@ namespace leveldb {
 		bool ignore_dot_files_;
 	};
 
-// Special Env used to delay background operations.
+	// Special Env used to delay background operations.
 	class SpecialEnv : public EnvWrapper {
 	public:
 		// sstable/log Sync() calls are blocked while this pointer is non-null.
@@ -1015,8 +1015,8 @@ namespace leveldb {
 		} while (ChangeOptions());
 	}
 
-// Check that writes done during a memtable compaction are recovered
-// if the database is shutdown during the memtable compaction.
+	// Check that writes done during a memtable compaction are recovered
+	// if the database is shutdown during the memtable compaction.
 	TEST_F(DBTest, RecoverDuringMemtableCompaction) {
 		do {
 			Options options = CurrentOptions();
@@ -1740,7 +1740,7 @@ namespace leveldb {
 		ASSERT_TRUE(!s.ok()) << "Locking did not prevent re-opening db";
 	}
 
-// Check that number of files does not grow when we are out of space
+	// Check that number of files does not grow when we are out of space
 	TEST_F(DBTest, NoSpace) {
 		Options options = CurrentOptions();
 		options.env = env_;
@@ -1944,7 +1944,7 @@ namespace leveldb {
 		delete options.filter_policy;
 	}
 
-// Multi-threaded test:
+	// Multi-threaded test:
 	namespace {
 
 		static const int kNumThreads = 4;

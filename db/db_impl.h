@@ -30,7 +30,7 @@ namespace leveldb {
 
 	class VersionSet;
 
-// 数据库具体实现
+	// 数据库具体实现
 	class DBImpl : public DB {
 	public:
 		DBImpl(const Options &options, const std::string &dbname);
@@ -229,8 +229,8 @@ namespace leveldb {
 		CompactionStats stats_[config::kNumLevels] GUARDED_BY(mutex_);
 	};
 
-// Sanitize db options.  The caller should delete result.info_log if
-// it is not equal to src.info_log.
+	// Sanitize db options.  The caller should delete result.info_log if
+	// it is not equal to src.info_log.
 	Options SanitizeOptions(const std::string &db,
 							const InternalKeyComparator *icmp,
 							const InternalFilterPolicy *ipolicy,

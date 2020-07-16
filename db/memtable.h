@@ -18,7 +18,7 @@ namespace leveldb {
 
 	class MemTableIterator;
 
-// 内存表 有序map 操作跳表实现
+	// 内存表 有序map 操作跳表实现
 	class MemTable {
 	public:
 		// MemTables are reference counted. 引用计数的 The initial reference count

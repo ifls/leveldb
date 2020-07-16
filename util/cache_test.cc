@@ -11,7 +11,7 @@
 
 namespace leveldb {
 
-// Conversions between numeric keys/values and the types expected by Cache.
+	// Conversions between numeric keys/values and the types expected by Cache.
 	static std::string EncodeKey(int k) {
 		std::string result;
 		PutFixed32(&result, k);

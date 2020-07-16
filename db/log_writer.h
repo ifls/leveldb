@@ -17,7 +17,7 @@ namespace leveldb {
 
 	namespace log {
 
-// wal日志的实现和封装
+		// wal日志的实现和封装
 		class Writer {
 		public:
 			// Create a writer that will append data to "*dest".

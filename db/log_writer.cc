@@ -83,7 +83,7 @@ namespace leveldb {
 			return s;
 		}
 
-//提交物理日志
+		//提交物理日志
 		Status Writer::EmitPhysicalRecord(RecordType t, const char *ptr,
 										  size_t length) {
 			assert(length <= 0xffff);  // Must fit in two bytes

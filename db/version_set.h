@@ -46,26 +46,26 @@ namespace leveldb {
 
 	class WritableFile;
 
-// Return the smallest index i such that files[i]->largest >= key.
-// Return files.size() if there is no such file.
-// REQUIRES: "files" contains a sorted list of non-overlapping files.
+	// Return the smallest index i such that files[i]->largest >= key.
+	// Return files.size() if there is no such file.
+	// REQUIRES: "files" contains a sorted list of non-overlapping files.
 	int FindFile(const InternalKeyComparator &icmp,
 				 const std::vector<FileMetaData *> &files, const Slice &key);
 
-// Returns true iff some file in "files" overlaps the user key range
-// [*smallest,*largest].
-// smallest==nullptr represents a key smaller than all keys in the DB.
-// largest==nullptr represents a key largest than all keys in the DB.
-// REQUIRES: If disjoint_sorted_files, files[] contains disjoint ranges
-//           in sorted order.
+	// Returns true iff some file in "files" overlaps the user key range
+	// [*smallest,*largest].
+	// smallest==nullptr represents a key smaller than all keys in the DB.
+	// largest==nullptr represents a key largest than all keys in the DB.
+	// REQUIRES: If disjoint_sorted_files, files[] contains disjoint ranges
+	//           in sorted order.
 	bool SomeFileOverlapsRange(const InternalKeyComparator &icmp,
 							   bool disjoint_sorted_files,
 							   const std::vector<FileMetaData *> &files,
 							   const Slice *smallest_user_key,
 							   const Slice *largest_user_key);
 
-// 记录数据库由磁盘上哪些文件构成，去掉旧的文件，
-// version + version edit == version+1
+	// 记录数据库由磁盘上哪些文件构成，去掉旧的文件，
+	// version + version edit == version+1
 	class Version {
 	public:
 		// Lookup the value for key.  If found, store it in *val and
@@ -326,7 +326,7 @@ namespace leveldb {
 		std::string compact_pointer_[config::kNumLevels]; //
 	};
 
-// A Compaction encapsulates information封装信息 about a compaction.
+	// A Compaction encapsulates information封装信息 about a compaction.
 	class Compaction {
 	public:
 		~Compaction();

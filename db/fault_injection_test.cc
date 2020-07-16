@@ -35,7 +35,7 @@ namespace leveldb {
 
 	namespace {
 
-// Assume a filename, and not a directory name like "/foo/bar/"
+		// Assume a filename, and not a directory name like "/foo/bar/"
 		static std::string GetDirName(const std::string &filename) {
 			size_t found = filename.find_last_of("/\\");
 			if (found == std::string::npos) {
@@ -50,7 +50,7 @@ namespace leveldb {
 			return Status::OK();
 		}
 
-// A basic file truncation function suitable for this test.
+		// A basic file truncation function suitable for this test.
 		Status Truncate(const std::string &filename, uint64_t length) {
 			leveldb::Env *env = leveldb::Env::Default();
 
@@ -103,8 +103,8 @@ namespace leveldb {
 
 	}  // anonymous namespace
 
-// A wrapper around WritableFile which informs another Env whenever this file
-// is written to or sync'ed.
+	// A wrapper around WritableFile which informs another Env whenever this file
+	// is written to or sync'ed.
 	class TestWritableFile : public WritableFile {
 	public:
 		TestWritableFile(const FileState &state, WritableFile *f,

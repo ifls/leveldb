@@ -14,7 +14,7 @@ namespace leveldb {
 
 	struct Options;
 
-// sst 是由多个 block 构成的
+	// sst 是由多个 block 构成的
 	class BlockBuilder {
 	public:
 		explicit BlockBuilder(const Options *options);

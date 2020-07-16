@@ -12,8 +12,8 @@ namespace leveldb {
 
 	class SnapshotList;
 
-// Snapshots are kept in a doubly-linked list in the DB.
-// Each SnapshotImpl corresponds to a particular sequence number.
+	// Snapshots are kept in a doubly-linked list in the DB.
+	// Each SnapshotImpl corresponds to a particular sequence number.
 	class SnapshotImpl : public Snapshot {
 	public:
 		SnapshotImpl(SequenceNumber sequence_number)

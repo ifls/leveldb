@@ -40,10 +40,10 @@ namespace leveldb {
 
 		constexpr const size_t kWritableFileBufferSize = 65536;
 
-// Up to 1000 mmaps for 64-bit binaries; none for 32-bit.
+		// Up to 1000 mmaps for 64-bit binaries; none for 32-bit.
 		constexpr int kDefaultMmapLimit = (sizeof(void *) >= 8) ? 1000 : 0;
 
-// Can be set by by EnvWindowsTestHelper::SetReadOnlyMMapLimit().
+		// Can be set by by EnvWindowsTestHelper::SetReadOnlyMMapLimit().
 		int g_mmap_limit = kDefaultMmapLimit;
 
 		std::string GetWindowsErrorMessage(DWORD error_code) {
@@ -111,10 +111,10 @@ namespace leveldb {
 			HANDLE handle_;
 		};
 
-// Helper class to limit resource usage to avoid exhaustion.
-// Currently used to limit read-only file descriptors and mmap file usage
-// so that we do not run out of file descriptors or virtual memory, or run into
-// kernel performance problems for very large databases.
+		// Helper class to limit resource usage to avoid exhaustion.
+		// Currently used to limit read-only file descriptors and mmap file usage
+		// so that we do not run out of file descriptors or virtual memory, or run into
+		// kernel performance problems for very large databases.
 		class Limiter {
 		public:
 			// Limit maximum number of resources to |max_acquires|.
@@ -336,9 +336,9 @@ namespace leveldb {
 			const std::string filename_;
 		};
 
-// Lock or unlock the entire file as specified by |lock|. Returns true
-// when successful, false upon failure. Caller should call ::GetLastError()
-// to determine cause of failure
+		// Lock or unlock the entire file as specified by |lock|. Returns true
+		// when successful, false upon failure. Caller should call ::GetLastError()
+		// to determine cause of failure
 		bool LockOrUnlock(HANDLE handle, bool lock) {
 			if (lock) {
 				return ::LockFile(handle,
@@ -688,7 +688,7 @@ namespace leveldb {
 			Limiter mmap_limiter_;  // Thread-safe.
 		};
 
-// Return the maximum number of concurrent mmaps.
+		// Return the maximum number of concurrent mmaps.
 		int MaxMmaps() { return g_mmap_limit; }
 
 		WindowsEnv::WindowsEnv()
@@ -737,18 +737,18 @@ namespace leveldb {
 			}
 		}
 
-// Wraps an Env instance whose destructor is never created.
-//
-// Intended usage:
-//   using PlatformSingletonEnv = SingletonEnv<PlatformEnv>;
-//   void ConfigurePosixEnv(int param) {
-//     PlatformSingletonEnv::AssertEnvNotInitialized();
-//     // set global configuration flags.
-//   }
-//   Env* Env::Default() {
-//     static PlatformSingletonEnv default_env;
-//     return default_env.env();
-//   }
+		// Wraps an Env instance whose destructor is never created.
+		//
+		// Intended usage:
+		//   using PlatformSingletonEnv = SingletonEnv<PlatformEnv>;
+		//   void ConfigurePosixEnv(int param) {
+		//     PlatformSingletonEnv::AssertEnvNotInitialized();
+		//     // set global configuration flags.
+		//   }
+		//   Env* Env::Default() {
+		//     static PlatformSingletonEnv default_env;
+		//     return default_env.env();
+		//   }
 		template<typename EnvType>
 		class SingletonEnv {
 		public:

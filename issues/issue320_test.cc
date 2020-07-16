@@ -18,7 +18,7 @@ namespace leveldb {
 
 	namespace {
 
-// Creates a random number in the range of [0, max).
+		// Creates a random number in the range of [0, max).
 		int GenerateRandomNumber(int max) { return std::rand() % max; }
 
 		std::string CreateRandomString(int32_t index) {

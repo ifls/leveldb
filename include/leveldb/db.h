@@ -14,7 +14,7 @@
 
 namespace leveldb {
 
-// Update CMakeLists.txt if you change these
+	// Update CMakeLists.txt if you change these
 	static const int kMajorVersion = 1;
 	static const int kMinorVersion = 22;
 
@@ -24,16 +24,16 @@ namespace leveldb {
 
 	class WriteBatch;
 
-// Abstract handle to particular state of a DB.
-// A Snapshot is an immutable object and can therefore be safely
-// accessed from multiple threads without any external synchronization.
-// 实现类是 SnapshotImpl
+	// Abstract handle to particular state of a DB.
+	// A Snapshot is an immutable object and can therefore be safely
+	// accessed from multiple threads without any external synchronization.
+	// 实现类是 SnapshotImpl
 	class LEVELDB_EXPORT Snapshot {
 	protected:
 		virtual ~Snapshot();
 	};
 
-// A range of keys
+	// A range of keys
 	struct LEVELDB_EXPORT Range {
 		Range() = default;
 
@@ -43,9 +43,9 @@ namespace leveldb {
 		Slice limit;  // Not included in the range
 	};
 
-// A DB is a persistent持久有序map ordered map from keys to values.
-// A DB is safe for concurrent access from multiple threads without any external synchronization.
-// 是并发安全的
+	// A DB is a persistent持久有序map ordered map from keys to values.
+	// A DB is safe for concurrent access from multiple threads without any external synchronization.
+	// 是并发安全的
 	class LEVELDB_EXPORT DB {
 	public:
 		// Open the database with the specified "name".
@@ -152,18 +152,18 @@ namespace leveldb {
 		virtual void CompactRange(const Slice *begin, const Slice *end) = 0;
 	};
 
-// Destroy the contents of the specified database. 破坏内容
-// Be very careful using this method.
-//
-// Note: For backwards compatibility, if DestroyDB is unable to list the
-// database files, Status::OK() will still be returned masking this failure. 失败
+	// Destroy the contents of the specified database. 破坏内容
+	// Be very careful using this method.
+	//
+	// Note: For backwards compatibility, if DestroyDB is unable to list the
+	// database files, Status::OK() will still be returned masking this failure. 失败
 	LEVELDB_EXPORT Status DestroyDB(const std::string &name,
 									const Options &options);
 
-// If a DB cannot be opened, you may attempt to call this method to 如果打开数据库失败，因为一些奔溃导致，数据不完整，可以使用此方法恢复
-// resurrect复活 as much of the contents of the database as possible尽可能恢复.
-// Some data may be lost, so be careful when calling this function
-// on a database that contains important information.
+	// If a DB cannot be opened, you may attempt to call this method to 如果打开数据库失败，因为一些奔溃导致，数据不完整，可以使用此方法恢复
+	// resurrect复活 as much of the contents of the database as possible尽可能恢复.
+	// Some data may be lost, so be careful when calling this function
+	// on a database that contains important information.
 	LEVELDB_EXPORT Status RepairDB(const std::string &dbname,
 								   const Options &options);
 

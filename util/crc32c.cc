@@ -242,17 +242,17 @@ namespace leveldb {
 					0xf4335f23, 0x063f52dd, 0x5a26b1e2, 0xa82abc1c, 0xbbd2dcef, 0x49ded111,
 					0x9c221d09, 0x6e2e10f7, 0x7dd67004, 0x8fda7dfa};
 
-// CRCs are pre- and post- conditioned by xoring with all ones.
+			// CRCs are pre- and post- conditioned by xoring with all ones.
 			static constexpr const uint32_t kCRC32Xor = static_cast<uint32_t>(0xffffffffU);
 
-// Reads a little-endian 32-bit integer from a 32-bit-aligned buffer.
+			// Reads a little-endian 32-bit integer from a 32-bit-aligned buffer.
 			inline uint32_t ReadUint32LE(const uint8_t *buffer) {
 				return DecodeFixed32(reinterpret_cast<const char *>(buffer));
 			}
 
-// Returns the smallest address >= the given address that is aligned to N bytes.
-//
-// N must be a power of two.
+			// Returns the smallest address >= the given address that is aligned to N bytes.
+			//
+			// N must be a power of two.
 			template<int N>
 			constexpr inline const uint8_t *RoundUp(const uint8_t *pointer) {
 				return reinterpret_cast<uint8_t *>(
@@ -262,8 +262,8 @@ namespace leveldb {
 
 		}  // namespace
 
-// Determine if the CPU running this program can accelerate the CRC32C
-// calculation.
+		// Determine if the CPU running this program can accelerate the CRC32C
+		// calculation.
 		static bool CanAccelerateCRC32C() {
 			// port::AcceleretedCRC32C returns zero when unable to accelerate.
 			static const char kTestCRCBuffer[] = "TestCRCBuffer";
@@ -283,14 +283,14 @@ namespace leveldb {
 			const uint8_t *e = p + n;
 			uint32_t l = crc ^kCRC32Xor;
 
-// Process one byte at a time.
+			// Process one byte at a time.
 #define STEP1                              \
   do {                                     \
     int c = (l & 0xff) ^ *p++;             \
     l = kByteExtensionTable[c] ^ (l >> 8); \
   } while (0)
 
-// Process one of the 4 strides of 4-byte data.
+			// Process one of the 4 strides of 4-byte data.
 #define STEP4(s)                                                               \
   do {                                                                         \
     crc##s = ReadUint32LE(p + s * 4) ^ kStrideExtensionTable3[crc##s & 0xff] ^ \
@@ -299,7 +299,7 @@ namespace leveldb {
              kStrideExtensionTable0[crc##s >> 24];                             \
   } while (0)
 
-// Process a 16-byte swath of 4 strides, each of which has 4 bytes of data.
+			// Process a 16-byte swath of 4 strides, each of which has 4 bytes of data.
 #define STEP16 \
   do {         \
     STEP4(0);  \
@@ -309,7 +309,7 @@ namespace leveldb {
     p += 16;   \
   } while (0)
 
-// Process 4 bytes that were already loaded into a word.
+			// Process 4 bytes that were already loaded into a word.
 #define STEP4W(w)                                   \
   do {                                              \
     w ^= l;                                         \

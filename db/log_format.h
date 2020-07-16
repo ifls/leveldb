@@ -23,13 +23,13 @@ namespace leveldb {
 			kLastType = 4  //一条日志的 结尾部分在此块上
 		};
 
-// 用于追加定义之后的枚举
+		// 用于追加定义之后的枚举
 		static const int kMaxRecordType = kLastType;
 
-//一个日志文件， 被分隔成多个物理块 32K
+		//一个日志文件， 被分隔成多个物理块 32K
 		static const int kBlockSize = 32768;
 
-// Header is checksum (4 bytes), length (2 bytes 2^16), type (1 byte). 就是上面的record_type
+		// Header is checksum (4 bytes), length (2 bytes 2^16), type (1 byte). 就是上面的record_type
 		static const int kHeaderSize = 4 + 2 + 1;
 
 	}  // namespace log

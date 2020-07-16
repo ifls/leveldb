@@ -54,8 +54,8 @@ namespace leveldb {
 	static const int kTotalSize = 100 * 1024 * 1024;
 	static const int kCount = kTotalSize / kValueSize;
 
-// Read through the first n keys repeatedly and check that they get
-// compacted (verified by checking the size of the key space).
+	// Read through the first n keys repeatedly and check that they get
+	// compacted (verified by checking the size of the key space).
 	void AutoCompactTest::DoReads(int n) {
 		std::string value(kValueSize, 'x');
 		DBImpl *dbi = reinterpret_cast<DBImpl *>(db_);

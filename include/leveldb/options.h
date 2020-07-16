@@ -147,7 +147,7 @@ namespace leveldb {
 		const FilterPolicy *filter_policy = nullptr;
 	};
 
-// Options that control read operations
+	// Options that control read operations
 	struct LEVELDB_EXPORT ReadOptions {
 		ReadOptions() = default;
 
@@ -168,7 +168,7 @@ namespace leveldb {
 		const Snapshot *snapshot = nullptr;
 	};
 
-// Options that control write operations
+	// Options that control write operations
 	struct LEVELDB_EXPORT WriteOptions {
 		WriteOptions() = default;
 

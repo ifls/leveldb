@@ -17,33 +17,33 @@ namespace leveldb {
 
 		MATCHER(IsOK, "") { return arg.ok(); }
 
-// Macros for testing the results of functions that return leveldb::Status or
-// util::StatusOr<T> (for any type T).
+		// Macros for testing the results of functions that return leveldb::Status or
+		// util::StatusOr<T> (for any type T).
 #define EXPECT_LEVELDB_OK(expression) \
   EXPECT_THAT(expression, leveldb::test::IsOK())
 #define ASSERT_LEVELDB_OK(expression) \
   ASSERT_THAT(expression, leveldb::test::IsOK())
 
-// Returns the random seed used at the start of the current test run.
+		// Returns the random seed used at the start of the current test run.
 		inline int RandomSeed() {
 			return testing::UnitTest::GetInstance()->random_seed();
 		}
 
-// Store in *dst a random string of length "len" and return a Slice that
-// references the generated data.
+		// Store in *dst a random string of length "len" and return a Slice that
+		// references the generated data.
 		Slice RandomString(Random *rnd, int len, std::string *dst);
 
-// Return a random key with the specified length that may contain interesting
-// characters (e.g. \x00, \xff, etc.).
+		// Return a random key with the specified length that may contain interesting
+		// characters (e.g. \x00, \xff, etc.).
 		std::string RandomKey(Random *rnd, int len);
 
-// Store in *dst a string of length "len" that will compress to
-// "N*compressed_fraction" bytes and return a Slice that references
-// the generated data.
+		// Store in *dst a string of length "len" that will compress to
+		// "N*compressed_fraction" bytes and return a Slice that references
+		// the generated data.
 		Slice CompressibleString(Random *rnd, double compressed_fraction, size_t len,
 								 std::string *dst);
 
-// A wrapper that allows injection of errors.
+		// A wrapper that allows injection of errors.
 		class ErrorEnv : public EnvWrapper {
 		public:
 			bool writable_file_error_;

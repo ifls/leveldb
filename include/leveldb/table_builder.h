@@ -27,7 +27,7 @@ namespace leveldb {
 
 	class WritableFile;
 
-// sst sorted string table 生成
+	// sst sorted string table 生成
 	class LEVELDB_EXPORT TableBuilder {
 	public:
 		// Create a builder that will store the contents of the table it is

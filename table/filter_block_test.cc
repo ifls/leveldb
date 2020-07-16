@@ -13,7 +13,7 @@
 
 namespace leveldb {
 
-// For testing: emit an array with one hash value per key
+	// For testing: emit an array with one hash value per key
 	class TestHashFilter : public FilterPolicy {
 	public:
 		const char *Name() const override { return "TestHashFilter"; }

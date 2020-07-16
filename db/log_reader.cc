@@ -54,7 +54,7 @@ namespace leveldb {
 			return true;
 		}
 
-//读取记录到record, scratch是存放记录多个部分的临时空间
+		//读取记录到record, scratch是存放记录多个部分的临时空间
 		bool Reader::ReadRecord(Slice *record, std::string *scratch) {
 			//调到开头的一些日志
 			if (last_record_offset_ < initial_offset_) {

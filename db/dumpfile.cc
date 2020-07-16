@@ -35,7 +35,7 @@ namespace leveldb {
 			return ParseFileName(basename, &ignored, type);
 		}
 
-// Notified when log reader encounters corruption.
+		// Notified when log reader encounters corruption.
 		class CorruptionReporter : public log::Reader::Reporter {
 		public:
 			void Corruption(size_t bytes, const Status &status) override {
@@ -50,7 +50,7 @@ namespace leveldb {
 			WritableFile *dst_;
 		};
 
-// Print contents of a log file. (*func)() is called on every record.
+		// Print contents of a log file. (*func)() is called on every record.
 		Status PrintLogContents(Env *env, const std::string &fname,
 								void (*func)(uint64_t, Slice, WritableFile *),
 								WritableFile *dst) {
@@ -71,7 +71,7 @@ namespace leveldb {
 			return Status::OK();
 		}
 
-// Called on every item found in a WriteBatch.
+		// Called on every item found in a WriteBatch.
 		class WriteBatchItemPrinter : public WriteBatch::Handler {
 		public:
 			void Put(const Slice &key, const Slice &value) override {
@@ -93,8 +93,8 @@ namespace leveldb {
 			WritableFile *dst_;
 		};
 
-// Called on every log record (each one of which is a WriteBatch)
-// found in a kLogFile.
+		// Called on every log record (each one of which is a WriteBatch)
+		// found in a kLogFile.
 		static void WriteBatchPrinter(uint64_t pos, Slice record, WritableFile *dst) {
 			std::string r = "--- offset ";
 			AppendNumberTo(&r, pos);
@@ -124,8 +124,8 @@ namespace leveldb {
 			return PrintLogContents(env, fname, WriteBatchPrinter, dst);
 		}
 
-// Called on every log record (each one of which is a WriteBatch)
-// found in a kDescriptorFile.
+		// Called on every log record (each one of which is a WriteBatch)
+		// found in a kDescriptorFile.
 		static void VersionEditPrinter(uint64_t pos, Slice record, WritableFile *dst) {
 			std::string r = "--- offset ";
 			AppendNumberTo(&r, pos);

@@ -222,7 +222,7 @@ namespace leveldb {
 		virtual void SleepForMicroseconds(int micros) = 0;
 	};
 
-// A file abstraction for reading sequentially through a file
+	// A file abstraction for reading sequentially through a file
 	class LEVELDB_EXPORT SequentialFile {
 	public:
 		SequentialFile() = default;
@@ -253,7 +253,7 @@ namespace leveldb {
 		virtual Status Skip(uint64_t n) = 0;
 	};
 
-// A file abstraction for randomly reading the contents of a file.
+	// A file abstraction for randomly reading the contents of a file.
 	class LEVELDB_EXPORT RandomAccessFile {
 	public:
 		RandomAccessFile() = default;
@@ -277,10 +277,10 @@ namespace leveldb {
 							char *scratch) const = 0;
 	};
 
-// A file abstraction for sequential writing.  The implementation
-// must provide buffering since callers may append small fragments
-// at a time to the file.
-// 日志目标文件， 只能追加
+	// A file abstraction for sequential writing.  The implementation
+	// must provide buffering since callers may append small fragments
+	// at a time to the file.
+	// 日志目标文件， 只能追加
 	class LEVELDB_EXPORT WritableFile {
 	public:
 		WritableFile() = default;
@@ -300,7 +300,7 @@ namespace leveldb {
 		virtual Status Sync() = 0;
 	};
 
-// An interface for writing log messages.
+	// An interface for writing log messages.
 	class LEVELDB_EXPORT Logger {
 	public:
 		Logger() = default;
@@ -316,7 +316,7 @@ namespace leveldb {
 		virtual void Logv(const char *format, std::va_list ap) = 0;
 	};
 
-// Identifies a locked file.
+	// Identifies a locked file.
 	class LEVELDB_EXPORT FileLock {
 	public:
 		FileLock() = default;
@@ -328,24 +328,24 @@ namespace leveldb {
 		virtual ~FileLock();
 	};
 
-// Log the specified data to *info_log if info_log is non-null.
+	// Log the specified data to *info_log if info_log is non-null.
 	void Log(Logger *info_log, const char *format, ...)
 #if defined(__GNUC__) || defined(__clang__)
 	__attribute__((__format__(__printf__, 2, 3)))
 #endif
 	;
 
-// A utility routine: write "data" to the named file.
+	// A utility routine: write "data" to the named file.
 	LEVELDB_EXPORT Status WriteStringToFile(Env *env, const Slice &data,
 											const std::string &fname);
 
-// A utility routine: read contents of named file into *data
+	// A utility routine: read contents of named file into *data
 	LEVELDB_EXPORT Status ReadFileToString(Env *env, const std::string &fname,
 										   std::string *data);
 
-// An implementation of Env that forwards all calls to another Env.
-// May be useful to clients who wish to override just part of the
-// functionality of another Env.
+	// An implementation of Env that forwards all calls to another Env.
+	// May be useful to clients who wish to override just part of the
+	// functionality of another Env.
 	class LEVELDB_EXPORT EnvWrapper : public Env {
 	public:
 		// Initialize an EnvWrapper that delegates all calls to *t.

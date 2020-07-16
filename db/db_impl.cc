@@ -40,7 +40,7 @@ namespace leveldb {
 
 	const int kNumNonTableCacheFiles = 10;
 
-// Information kept for every waiting writer
+	// Information kept for every waiting writer
 	struct DBImpl::Writer {
 		explicit Writer(port::Mutex *mu)
 				: batch(nullptr), sync(false), done(false), cv(mu) {}
@@ -86,7 +86,7 @@ namespace leveldb {
 		uint64_t total_bytes;
 	};
 
-// Fix user-supplied options to be reasonable
+	// Fix user-supplied options to be reasonable
 	template<class T, class V>
 	static void ClipToRange(T *ptr, V minvalue, V maxvalue) {
 		if (static_cast<V>(*ptr) > maxvalue) *ptr = maxvalue;
@@ -694,7 +694,7 @@ namespace leveldb {
 		reinterpret_cast<DBImpl *>(db)->BackgroundCall();
 	}
 
-// 后台任务
+	// 后台任务
 	void DBImpl::BackgroundCall() {
 		MutexLock l(&mutex_);
 		assert(background_compaction_scheduled_);
@@ -908,7 +908,7 @@ namespace leveldb {
 		return versions_->LogAndApply(compact->compaction->edit(), &mutex_);
 	}
 
-//后台压缩 两个sst  归并排序
+	//后台压缩 两个sst  归并排序
 	Status DBImpl::DoCompactionWork(CompactionState *compact) {
 		const uint64_t start_micros = env_->NowMicros();
 		int64_t imm_micros = 0;  // Micros spent doing imm_ compactions
@@ -1314,8 +1314,8 @@ namespace leveldb {
 		return status;
 	}
 
-// REQUIRES: Writer list must be non-empty
-// REQUIRES: First writer must have a non-null batch
+	// REQUIRES: Writer list must be non-empty
+	// REQUIRES: First writer must have a non-null batch
 	WriteBatch *DBImpl::BuildBatchGroup(Writer **last_writer) {
 		mutex_.AssertHeld();
 		assert(!writers_.empty());
@@ -1369,8 +1369,8 @@ namespace leveldb {
 		return result;
 	}
 
-// REQUIRES: mutex_ is held
-// REQUIRES: this thread is currently at the front of the writer queue
+	// REQUIRES: mutex_ is held
+	// REQUIRES: this thread is currently at the front of the writer queue
 	Status DBImpl::MakeRoomForWrite(bool force) {  //force代表是否强制一次compact
 		mutex_.AssertHeld();
 		assert(!writers_.empty());
@@ -1524,8 +1524,8 @@ namespace leveldb {
 		v->Unref();
 	}
 
-// Default implementations of convenience methods that subclasses of DB
-// can call if they wish
+	// Default implementations of convenience methods that subclasses of DB
+	// can call if they wish
 	Status DB::Put(const WriteOptions &opt, const Slice &key, const Slice &value) {
 		WriteBatch batch;
 		batch.Put(key, value);

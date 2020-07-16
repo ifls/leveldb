@@ -21,13 +21,13 @@ namespace leveldb {
 
 	class FilterPolicy;
 
-// A FilterBlockBuilder is used to construct all of the filters for a
-// particular Table.  It generates a single string which is stored as
-// a special block in the Table.
-//
-// The sequence of calls to FilterBlockBuilder must match the regexp:
-//      (StartBlock AddKey*)* Finish
-// sst 中的 过滤块  便于bloom 过滤器 判断key是否在 数据块中
+	// A FilterBlockBuilder is used to construct all of the filters for a
+	// particular Table.  It generates a single string which is stored as
+	// a special block in the Table.
+	//
+	// The sequence of calls to FilterBlockBuilder must match the regexp:
+	//      (StartBlock AddKey*)* Finish
+	// sst 中的 过滤块  便于bloom 过滤器 判断key是否在 数据块中
 	class FilterBlockBuilder {
 	public:
 		explicit FilterBlockBuilder(const FilterPolicy *);

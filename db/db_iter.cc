@@ -31,11 +31,11 @@ namespace leveldb {
 
 	namespace {
 
-// Memtables and sstables that make the DB representation contain
-// (userkey,seq,type) => uservalue entries.  DBIter
-// combines multiple entries for the same userkey found in the DB
-// representation into a single entry while accounting for sequence
-// numbers, deletion markers, overwrites, etc.
+		// Memtables and sstables that make the DB representation contain
+		// (userkey,seq,type) => uservalue entries.  DBIter
+		// combines multiple entries for the same userkey found in the DB
+		// representation into a single entry while accounting for sequence
+		// numbers, deletion markers, overwrites, etc.
 		class DBIter : public Iterator {
 		public:
 			// Which direction is the iterator currently moving?

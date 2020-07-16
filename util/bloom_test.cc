@@ -149,7 +149,7 @@ namespace leveldb {
 		ASSERT_LE(mediocre_filters, good_filters / 5);
 	}
 
-// Different bits-per-byte
+	// Different bits-per-byte
 
 }  // namespace leveldb
 

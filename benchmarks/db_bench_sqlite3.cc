@@ -114,7 +114,7 @@ inline static void WalCheckpoint(sqlite3 *db_) {
 
 namespace leveldb {
 
-// Helper for quickly generating random data.
+	// Helper for quickly generating random data.
 	namespace {
 		class RandomGenerator {
 		private:

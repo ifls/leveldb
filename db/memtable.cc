@@ -33,9 +33,9 @@ namespace leveldb {
 		return comparator.Compare(a, b);
 	}
 
-// Encode a suitable internal key target for "target" and return it.
-// Uses *scratch as scratch space, and the returned pointer will point
-// into this scratch space.
+	// Encode a suitable internal key target for "target" and return it.
+	// Uses *scratch as scratch space, and the returned pointer will point
+	// into this scratch space.
 	static const char *EncodeKey(std::string *scratch, const Slice &target) {
 		scratch->clear();
 		PutVarint32(scratch, target.size());
