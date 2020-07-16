@@ -14,70 +14,74 @@
 
 namespace leveldb {
 
-	// 生成 sst
-	Status BuildTable(const std::string &dbname, Env *env, const Options &options, TableCache *table_cache
-			, Iterator *iter, FileMetaData *meta) {
-		// iter 是 memtable 迭代器
-		Status s;
-		meta->file_size = 0;
-		iter->SeekToFirst();
+// 生成 sst
+Status BuildTable(const std::string &dbname,
+				  Env *env,
+				  const Options &options,
+				  TableCache *table_cache,
+				  Iterator *iter,
+				  FileMetaData *meta) {
+	// iter 是 memtable 迭代器
+	Status s;
+	meta->file_size = 0;
+	iter->SeekToFirst();
 
-		std::string fname = TableFileName(dbname, meta->number); //文件名
+	std::string fname = TableFileName(dbname, meta->number); //文件名
 
-		if (iter->Valid()) {
-			WritableFile *file;
-			s = env->NewWritableFile(fname, &file);
-			if (!s.ok()) {
-				return s;
-			}
-
-			TableBuilder *builder = new TableBuilder(options, file);
-			meta->smallest.DecodeFrom(iter->key());  // 记录最小key到元数据
-			for (; iter->Valid(); iter->Next()) {
-				Slice key = iter->key();
-				meta->largest.DecodeFrom(key);  // 保存最大key, 低效
-				// 加到 data block
-				builder->Add(key, iter->value());
-			}
-
-			// Finish and check for builder errors
-			s = builder->Finish();  // 加入 meta block, meta index block index block, footer
-			if (s.ok()) {
-				meta->file_size = builder->FileSize();
-				assert(meta->file_size > 0);
-			}
-			delete builder;
-
-			// Finish and check for file errors
-			if (s.ok()) {
-				// 同步到磁盘
-				s = file->Sync();
-			}
-			if (s.ok()) {
-				s = file->Close();
-			}
-			delete file;
-			file = nullptr;
-
-			if (s.ok()) {
-				// Verify that the table is usable
-				Iterator *it = table_cache->NewIterator(ReadOptions(), meta->number, meta->file_size);
-				s = it->status();
-				delete it;
-			}
+	if (iter->Valid()) {
+		WritableFile *file;
+		s = env->NewWritableFile(fname, &file);
+		if (!s.ok()) {
+			return s;
 		}
 
-		// Check for input iterator errors
-		if (!iter->status().ok()) {
-			s = iter->status();
+		TableBuilder *builder = new TableBuilder(options, file);
+		meta->smallest.DecodeFrom(iter->key());  // 记录最小key到元数据
+		for (; iter->Valid(); iter->Next()) {
+			Slice key = iter->key();
+			meta->largest.DecodeFrom(key);  // 保存最大key, 低效
+			// 加到 data block
+			builder->Add(key, iter->value());
 		}
 
-		if (s.ok() && meta->file_size > 0) {
-			// Keep it
-		} else {
-			env->RemoveFile(fname);
+		// Finish and check for builder errors
+		s = builder->Finish();  // 加入 meta block, meta index block index block, footer
+		if (s.ok()) {
+			meta->file_size = builder->FileSize();
+			assert(meta->file_size > 0);
 		}
-		return s;
+		delete builder;
+
+		// Finish and check for file errors
+		if (s.ok()) {
+			// 同步到磁盘
+			s = file->Sync();
+		}
+		if (s.ok()) {
+			s = file->Close();
+		}
+		delete file;
+		file = nullptr;
+
+		if (s.ok()) {
+			// Verify that the table is usable
+			Iterator *it = table_cache->NewIterator(ReadOptions(), meta->number, meta->file_size);
+			s = it->status();
+			delete it;
+		}
 	}
+
+	// Check for input iterator errors
+	if (!iter->status().ok()) {
+		s = iter->status();
+	}
+
+	if (s.ok() && meta->file_size > 0) {
+		// Keep it
+	} else {
+		env->RemoveFile(fname);
+	}
+	return s;
+}
 
 }  // namespace leveldb

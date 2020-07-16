@@ -9,36 +9,36 @@
 #include "leveldb/status.h"
 
 namespace leveldb {
-	namespace {
+namespace {
 
-		class StdoutPrinter : public WritableFile {
-		public:
-			Status Append(const Slice &data) override {
-				fwrite(data.data(), 1, data.size(), stdout);
-				return Status::OK();
-			}
+class StdoutPrinter : public WritableFile {
+ public:
+  Status Append(const Slice &data) override {
+	  fwrite(data.data(), 1, data.size(), stdout);
+	  return Status::OK();
+  }
 
-			Status Close() override { return Status::OK(); }
+  Status Close() override { return Status::OK(); }
 
-			Status Flush() override { return Status::OK(); }
+  Status Flush() override { return Status::OK(); }
 
-			Status Sync() override { return Status::OK(); }
-		};
+  Status Sync() override { return Status::OK(); }
+};
 
-		bool HandleDumpCommand(Env *env, char **files, int num) {
-			StdoutPrinter printer;
-			bool ok = true;
-			for (int i = 0; i < num; i++) {
-				Status s = DumpFile(env, files[i], &printer);
-				if (!s.ok()) {
-					std::fprintf(stderr, "%s\n", s.ToString().c_str());
-					ok = false;
-				}
-			}
-			return ok;
+bool HandleDumpCommand(Env *env, char **files, int num) {
+	StdoutPrinter printer;
+	bool ok = true;
+	for (int i = 0; i < num; i++) {
+		Status s = DumpFile(env, files[i], &printer);
+		if (!s.ok()) {
+			std::fprintf(stderr, "%s\n", s.ToString().c_str());
+			ok = false;
 		}
+	}
+	return ok;
+}
 
-	}  // namespace
+}  // namespace
 }  // namespace leveldb
 
 static void Usage() {

@@ -75,22 +75,36 @@ LEVELDB_EXPORT leveldb_t *leveldb_open(const leveldb_options_t *options, const c
 // 只是删除 db，释放内存
 LEVELDB_EXPORT void leveldb_close(leveldb_t *db);
 
-LEVELDB_EXPORT void leveldb_put(leveldb_t *db, const leveldb_writeoptions_t *options, const char *key, size_t keylen
-		, const char *val, size_t vallen, char **errptr);
+LEVELDB_EXPORT void leveldb_put(leveldb_t *db,
+								const leveldb_writeoptions_t *options,
+								const char *key,
+								size_t keylen,
+								const char *val,
+								size_t vallen,
+								char **errptr);
 
-LEVELDB_EXPORT void leveldb_delete(leveldb_t *db, const leveldb_writeoptions_t *options, const char *key, size_t keylen
-		, char **errptr);
+LEVELDB_EXPORT void leveldb_delete(leveldb_t *db,
+								   const leveldb_writeoptions_t *options,
+								   const char *key,
+								   size_t keylen,
+								   char **errptr);
 
-LEVELDB_EXPORT void leveldb_write(leveldb_t *db, const leveldb_writeoptions_t *options, leveldb_writebatch_t *batch
-		, char **errptr);
+LEVELDB_EXPORT void leveldb_write(leveldb_t *db,
+								  const leveldb_writeoptions_t *options,
+								  leveldb_writebatch_t *batch,
+								  char **errptr);
 
 /* Returns NULL if not found.  A malloc()ed array otherwise.
    Stores the length of the array in *vallen. */
-LEVELDB_EXPORT char *leveldb_get(leveldb_t *db, const leveldb_readoptions_t *options, const char *key, size_t keylen
-		, size_t *vallen, char **errptr);
+LEVELDB_EXPORT char *leveldb_get(leveldb_t *db,
+								 const leveldb_readoptions_t *options,
+								 const char *key,
+								 size_t keylen,
+								 size_t *vallen,
+								 char **errptr);
 
 LEVELDB_EXPORT leveldb_iterator_t *leveldb_create_iterator(leveldb_t *db, const leveldb_readoptions_t *options);
-
+// 创建快照
 LEVELDB_EXPORT const leveldb_snapshot_t *leveldb_create_snapshot(leveldb_t *db);
 
 LEVELDB_EXPORT void leveldb_release_snapshot(leveldb_t *db, const leveldb_snapshot_t *snapshot);
@@ -99,12 +113,19 @@ LEVELDB_EXPORT void leveldb_release_snapshot(leveldb_t *db, const leveldb_snapsh
    Else returns a pointer to a malloc()-ed null-terminated value. */
 LEVELDB_EXPORT char *leveldb_property_value(leveldb_t *db, const char *propname);
 
-LEVELDB_EXPORT void leveldb_approximate_sizes(leveldb_t *db, int num_ranges, const char *const *range_start_key
-		, const size_t *range_start_key_len, const char *const *range_limit_key, const size_t *range_limit_key_len
-		, uint64_t *sizes);
+LEVELDB_EXPORT void leveldb_approximate_sizes(leveldb_t *db,
+											  int num_ranges,
+											  const char *const *range_start_key,
+											  const size_t *range_start_key_len,
+											  const char *const *range_limit_key,
+											  const size_t *range_limit_key_len,
+											  uint64_t *sizes);
 
-LEVELDB_EXPORT void leveldb_compact_range(leveldb_t *db, const char *start_key, size_t start_key_len
-		, const char *limit_key, size_t limit_key_len);
+LEVELDB_EXPORT void leveldb_compact_range(leveldb_t *db,
+										  const char *start_key,
+										  size_t start_key_len,
+										  const char *limit_key,
+										  size_t limit_key_len);
 
 /* Management operations */
 
@@ -142,13 +163,22 @@ LEVELDB_EXPORT void leveldb_writebatch_destroy(leveldb_writebatch_t *);
 
 LEVELDB_EXPORT void leveldb_writebatch_clear(leveldb_writebatch_t *);
 
-LEVELDB_EXPORT void leveldb_writebatch_put(leveldb_writebatch_t *, const char *key, size_t klen, const char *val
-		, size_t vlen);
+LEVELDB_EXPORT void leveldb_writebatch_put(leveldb_writebatch_t *,
+										   const char *key,
+										   size_t klen,
+										   const char *val,
+										   size_t vlen);
 
 LEVELDB_EXPORT void leveldb_writebatch_delete(leveldb_writebatch_t *, const char *key, size_t klen);
 
-LEVELDB_EXPORT void leveldb_writebatch_iterate(const leveldb_writebatch_t *, void *state, void (*put)(void *
-		, const char *k, size_t klen, const char *v, size_t vlen), void (*deleted)(void *, const char *k, size_t klen));
+LEVELDB_EXPORT void leveldb_writebatch_iterate(const leveldb_writebatch_t *,
+											   void *state,
+											   void (*put)(void *,
+														   const char *k,
+														   size_t klen,
+														   const char *v,
+														   size_t vlen),
+											   void (*deleted)(void *, const char *k, size_t klen));
 
 LEVELDB_EXPORT void leveldb_writebatch_append(leveldb_writebatch_t *destination, const leveldb_writebatch_t *source);
 
@@ -185,22 +215,31 @@ LEVELDB_EXPORT void leveldb_options_set_block_restart_interval(leveldb_options_t
 LEVELDB_EXPORT void leveldb_options_set_max_file_size(leveldb_options_t *, size_t);
 
 enum {
-	leveldb_no_compression = 0, leveldb_snappy_compression = 1
+  leveldb_no_compression = 0, leveldb_snappy_compression = 1
 }; LEVELDB_EXPORT void leveldb_options_set_compression(leveldb_options_t *, int);
 
 /* Comparator */
 
 LEVELDB_EXPORT leveldb_comparator_t *leveldb_comparator_create(void *state, void (*destructor)(void *), int (*compare)(
-		void *, const char *a, size_t alen, const char *b, size_t blen), const char *(*name)(void *));
+	void *, const char *a, size_t alen, const char *b, size_t blen), const char *(*name)(void *));
 
 LEVELDB_EXPORT void leveldb_comparator_destroy(leveldb_comparator_t *);
 
 /* Filter policy */
 
-LEVELDB_EXPORT leveldb_filterpolicy_t *leveldb_filterpolicy_create(void *state, void (*destructor)(void *)
-		, char *(*create_filter)(void *, const char *const *key_array, const size_t *key_length_array, int num_keys
-		, size_t *filter_length), uint8_t (*key_may_match)(void *, const char *key, size_t length, const char *filter
-		, size_t filter_length), const char *(*name)(void *));
+LEVELDB_EXPORT leveldb_filterpolicy_t *leveldb_filterpolicy_create(void *state,
+																   void (*destructor)(void *),
+																   char *(*create_filter)(void *,
+																						  const char *const *key_array,
+																						  const size_t *key_length_array,
+																						  int num_keys,
+																						  size_t *filter_length),
+																   uint8_t (*key_may_match)(void *,
+																							const char *key,
+																							size_t length,
+																							const char *filter,
+																							size_t filter_length),
+																   const char *(*name)(void *));
 
 LEVELDB_EXPORT void leveldb_filterpolicy_destroy(leveldb_filterpolicy_t *);
 
@@ -244,10 +283,11 @@ LEVELDB_EXPORT char *leveldb_env_get_test_directory(leveldb_env_t *);
 /* Utility */
 
 /* Calls free(ptr).
-   REQUIRES: ptr was malloc()-ed and returned by one of the routines
-   in this file.  Note that in certain cases (typically on Windows), you
+   REQUIRES: ptr was malloc()-ed and returned by one of the routines in this file.
+   Note that in certain cases (typically on Windows), you
    may need to call this routine instead of free(ptr) to dispose of
    malloc()-ed memory returned by this library. */
+// 就是 free(ptr)
 LEVELDB_EXPORT void leveldb_free(void *ptr);
 
 /* Return the major version number for this release. */

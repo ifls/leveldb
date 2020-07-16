@@ -72,12 +72,10 @@ static void CheckPut(void *ptr, const char *k, size_t klen, const char *v, size_
 	int *state = (int *) ptr;
 	CheckCondition(*state < 2);
 	switch (*state) {
-		case 0:
-			CheckEqual("bar", k, klen);
+		case 0: CheckEqual("bar", k, klen);
 			CheckEqual("b", v, vlen);
 			break;
-		case 1:
-			CheckEqual("box", k, klen);
+		case 1: CheckEqual("box", k, klen);
 			CheckEqual("c", v, vlen);
 			break;
 	}
@@ -118,8 +116,11 @@ static const char *FilterName(void *arg) {
 	return "TestFilter";
 }
 
-static char *FilterCreate(void *arg, const char *const *key_array, const size_t *key_length_array, int num_keys
-		, size_t *filter_length) {
+static char *FilterCreate(void *arg,
+						  const char *const *key_array,
+						  const size_t *key_length_array,
+						  int num_keys,
+						  size_t *filter_length) {
 	*filter_length = 4;
 	char *result = (char *) malloc(4);
 	memcpy(result, "fake", 4);

@@ -112,537 +112,536 @@ inline static void WalCheckpoint(sqlite3 *db_) {
 
 namespace leveldb {
 
-	// Helper for quickly generating random data.
-	namespace {
-		class RandomGenerator {
-		private:
-			std::string data_;
-			int pos_;
+// Helper for quickly generating random data.
+namespace {
+class RandomGenerator {
+ private:
+  std::string data_;
+  int pos_;
 
-		public:
-			RandomGenerator() {
-				// We use a limited amount of data over and over again and ensure
-				// that it is larger than the compression window (32KB), and also
-				// large enough to serve all typical value sizes we want to write.
-				Random rnd(301);
-				std::string piece;
-				while (data_.size() < 1048576) {
-					// Add a short fragment that is as compressible as specified
-					// by FLAGS_compression_ratio.
-					test::CompressibleString(&rnd, FLAGS_compression_ratio, 100, &piece);
-					data_.append(piece);
-				}
-				pos_ = 0;
-			}
+ public:
+  RandomGenerator() {
+	  // We use a limited amount of data over and over again and ensure
+	  // that it is larger than the compression window (32KB), and also
+	  // large enough to serve all typical value sizes we want to write.
+	  Random rnd(301);
+	  std::string piece;
+	  while (data_.size() < 1048576) {
+		  // Add a short fragment that is as compressible as specified
+		  // by FLAGS_compression_ratio.
+		  test::CompressibleString(&rnd, FLAGS_compression_ratio, 100, &piece);
+		  data_.append(piece);
+	  }
+	  pos_ = 0;
+  }
 
-			Slice Generate(int len) {
-				if (pos_ + len > data_.size()) {
-					pos_ = 0;
-					assert(len < data_.size());
-				}
-				pos_ += len;
-				return Slice(data_.data() + pos_ - len, len);
-			}
-		};
+  Slice Generate(int len) {
+	  if (pos_ + len > data_.size()) {
+		  pos_ = 0;
+		  assert(len < data_.size());
+	  }
+	  pos_ += len;
+	  return Slice(data_.data() + pos_ - len, len);
+  }
+};
 
-		static Slice TrimSpace(Slice s) {
-			int start = 0;
-			while (start < s.size() && isspace(s[start])) {
-				start++;
-			}
-			int limit = s.size();
-			while (limit > start && isspace(s[limit - 1])) {
-				limit--;
-			}
-			return Slice(s.data() + start, limit - start);
-		}
+static Slice TrimSpace(Slice s) {
+	int start = 0;
+	while (start < s.size() && isspace(s[start])) {
+		start++;
+	}
+	int limit = s.size();
+	while (limit > start && isspace(s[limit - 1])) {
+		limit--;
+	}
+	return Slice(s.data() + start, limit - start);
+}
 
-	}  // namespace
+}  // namespace
 
-	class Benchmark {
-	private:
-		sqlite3 *db_;
-		int db_num_;
-		int num_;
-		int reads_;
-		double start_;
-		double last_op_finish_;
-		int64_t bytes_;
-		std::string message_;
-		Histogram hist_;
-		RandomGenerator gen_;
-		Random rand_;
+class Benchmark {
+ private:
+  sqlite3 *db_;
+  int db_num_;
+  int num_;
+  int reads_;
+  double start_;
+  double last_op_finish_;
+  int64_t bytes_;
+  std::string message_;
+  Histogram hist_;
+  RandomGenerator gen_;
+  Random rand_;
 
-		// State kept for progress messages
-		int done_;
-		int next_report_;  // When to report next
+  // State kept for progress messages
+  int done_;
+  int next_report_;  // When to report next
 
-		void PrintHeader() {
-			const int kKeySize = 16;
-			PrintEnvironment();
-			std::fprintf(stdout, "Keys:       %d bytes each\n", kKeySize);
-			std::fprintf(stdout, "Values:     %d bytes each\n", FLAGS_value_size);
-			std::fprintf(stdout, "Entries:    %d\n", num_);
-			std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n", (
-					(static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
-			PrintWarnings();
-			std::fprintf(stdout, "------------------------------------------------\n");
-		}
+  void PrintHeader() {
+	  const int kKeySize = 16;
+	  PrintEnvironment();
+	  std::fprintf(stdout, "Keys:       %d bytes each\n", kKeySize);
+	  std::fprintf(stdout, "Values:     %d bytes each\n", FLAGS_value_size);
+	  std::fprintf(stdout, "Entries:    %d\n", num_);
+	  std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n", (
+		  (static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
+	  PrintWarnings();
+	  std::fprintf(stdout, "------------------------------------------------\n");
+  }
 
-		void PrintWarnings() {
+  void PrintWarnings() {
 #if defined(__GNUC__) && !defined(__OPTIMIZE__)
-			std::fprintf(stdout, "WARNING: Optimization is disabled: benchmarks unnecessarily slow\n");
+	  std::fprintf(stdout, "WARNING: Optimization is disabled: benchmarks unnecessarily slow\n");
 #endif
 #ifndef NDEBUG
-			std::fprintf(stdout, "WARNING: Assertions are enabled; benchmarks unnecessarily slow\n");
+	  std::fprintf(stdout, "WARNING: Assertions are enabled; benchmarks unnecessarily slow\n");
 #endif
-		}
+  }
 
-		void PrintEnvironment() {
-			std::fprintf(stderr, "SQLite:     version %s\n", SQLITE_VERSION);
+  void PrintEnvironment() {
+	  std::fprintf(stderr, "SQLite:     version %s\n", SQLITE_VERSION);
 
 #if defined(__linux)
-			time_t now = time(nullptr);
-			std::fprintf(stderr, "Date:       %s",
-						 ctime(&now));  // ctime() adds newline
+	  time_t now = time(nullptr);
+	  std::fprintf(stderr, "Date:       %s",
+				   ctime(&now));  // ctime() adds newline
 
-			FILE* cpuinfo = std::fopen("/proc/cpuinfo", "r");
-			if (cpuinfo != nullptr) {
-			  char line[1000];
-			  int num_cpus = 0;
-			  std::string cpu_type;
-			  std::string cache_size;
-			  while (fgets(line, sizeof(line), cpuinfo) != nullptr) {
-				const char* sep = strchr(line, ':');
-				if (sep == nullptr) {
-				  continue;
-				}
-				Slice key = TrimSpace(Slice(line, sep - 1 - line));
-				Slice val = TrimSpace(Slice(sep + 1));
-				if (key == "model name") {
-				  ++num_cpus;
-				  cpu_type = val.ToString();
-				} else if (key == "cache size") {
-				  cache_size = val.ToString();
-				}
-			  }
-			  std::fclose(cpuinfo);
-			  std::fprintf(stderr, "CPU:        %d * %s\n", num_cpus, cpu_type.c_str());
-			  std::fprintf(stderr, "CPUCache:   %s\n", cache_size.c_str());
-			}
+	  FILE* cpuinfo = std::fopen("/proc/cpuinfo", "r");
+	  if (cpuinfo != nullptr) {
+		char line[1000];
+		int num_cpus = 0;
+		std::string cpu_type;
+		std::string cache_size;
+		while (fgets(line, sizeof(line), cpuinfo) != nullptr) {
+		  const char* sep = strchr(line, ':');
+		  if (sep == nullptr) {
+			continue;
+		  }
+		  Slice key = TrimSpace(Slice(line, sep - 1 - line));
+		  Slice val = TrimSpace(Slice(sep + 1));
+		  if (key == "model name") {
+			++num_cpus;
+			cpu_type = val.ToString();
+		  } else if (key == "cache size") {
+			cache_size = val.ToString();
+		  }
+		}
+		std::fclose(cpuinfo);
+		std::fprintf(stderr, "CPU:        %d * %s\n", num_cpus, cpu_type.c_str());
+		std::fprintf(stderr, "CPUCache:   %s\n", cache_size.c_str());
+	  }
 #endif
-		}
+  }
 
-		void Start() {
-			start_ = Env::Default()->NowMicros() * 1e-6;
-			bytes_ = 0;
-			message_.clear();
-			last_op_finish_ = start_;
-			hist_.Clear();
-			done_ = 0;
-			next_report_ = 100;
-		}
+  void Start() {
+	  start_ = Env::Default()->NowMicros() * 1e-6;
+	  bytes_ = 0;
+	  message_.clear();
+	  last_op_finish_ = start_;
+	  hist_.Clear();
+	  done_ = 0;
+	  next_report_ = 100;
+  }
 
-		void FinishedSingleOp() {
-			if (FLAGS_histogram) {
-				double now = Env::Default()->NowMicros() * 1e-6;
-				double micros = (now - last_op_finish_) * 1e6;
-				hist_.Add(micros);
-				if (micros > 20000) {
-					std::fprintf(stderr, "long op: %.1f micros%30s\r", micros, "");
-					std::fflush(stderr);
-				}
-				last_op_finish_ = now;
-			}
+  void FinishedSingleOp() {
+	  if (FLAGS_histogram) {
+		  double now = Env::Default()->NowMicros() * 1e-6;
+		  double micros = (now - last_op_finish_) * 1e6;
+		  hist_.Add(micros);
+		  if (micros > 20000) {
+			  std::fprintf(stderr, "long op: %.1f micros%30s\r", micros, "");
+			  std::fflush(stderr);
+		  }
+		  last_op_finish_ = now;
+	  }
 
-			done_++;
-			if (done_ >= next_report_) {
-				if (next_report_ < 1000)
-					next_report_ += 100;
-				else if (next_report_ < 5000)
-					next_report_ += 500;
-				else if (next_report_ < 10000)
-					next_report_ += 1000;
-				else if (next_report_ < 50000)
-					next_report_ += 5000;
-				else if (next_report_ < 100000)
-					next_report_ += 10000;
-				else if (next_report_ < 500000)
-					next_report_ += 50000;
-				else
-					next_report_ += 100000;
-				std::fprintf(stderr, "... finished %d ops%30s\r", done_, "");
-				std::fflush(stderr);
-			}
-		}
+	  done_++;
+	  if (done_ >= next_report_) {
+		  if (next_report_ < 1000)
+			  next_report_ += 100;
+		  else if (next_report_ < 5000)
+			  next_report_ += 500;
+		  else if (next_report_ < 10000)
+			  next_report_ += 1000;
+		  else if (next_report_ < 50000)
+			  next_report_ += 5000;
+		  else if (next_report_ < 100000)
+			  next_report_ += 10000;
+		  else if (next_report_ < 500000)
+			  next_report_ += 50000;
+		  else
+			  next_report_ += 100000;
+		  std::fprintf(stderr, "... finished %d ops%30s\r", done_, "");
+		  std::fflush(stderr);
+	  }
+  }
 
-		void Stop(const Slice &name) {
-			double finish = Env::Default()->NowMicros() * 1e-6;
+  void Stop(const Slice &name) {
+	  double finish = Env::Default()->NowMicros() * 1e-6;
 
-			// Pretend at least one op was done in case we are running a benchmark
-			// that does not call FinishedSingleOp().
-			if (done_ < 1) done_ = 1;
+	  // Pretend at least one op was done in case we are running a benchmark
+	  // that does not call FinishedSingleOp().
+	  if (done_ < 1) done_ = 1;
 
-			if (bytes_ > 0) {
-				char rate[100];
-				std::snprintf(rate, sizeof(rate), "%6.1f MB/s", (bytes_ / 1048576.0) / (finish - start_));
-				if (!message_.empty()) {
-					message_ = std::string(rate) + " " + message_;
-				} else {
-					message_ = rate;
-				}
-			}
+	  if (bytes_ > 0) {
+		  char rate[100];
+		  std::snprintf(rate, sizeof(rate), "%6.1f MB/s", (bytes_ / 1048576.0) / (finish - start_));
+		  if (!message_.empty()) {
+			  message_ = std::string(rate) + " " + message_;
+		  } else {
+			  message_ = rate;
+		  }
+	  }
 
-			std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n", name.ToString().c_str(),
-						 (finish - start_) * 1e6 / done_, (message_.empty() ? "" : " "), message_.c_str());
-			if (FLAGS_histogram) {
-				std::fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
-			}
-			std::fflush(stdout);
-		}
+	  std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n", name.ToString().c_str(),
+				   (finish - start_) * 1e6 / done_, (message_.empty() ? "" : " "), message_.c_str());
+	  if (FLAGS_histogram) {
+		  std::fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
+	  }
+	  std::fflush(stdout);
+  }
 
-	public:
-		enum Order {
-			SEQUENTIAL, RANDOM
-		};
-		enum DBState {
-			FRESH, EXISTING
-		};
+ public:
+  enum Order {
+	SEQUENTIAL, RANDOM
+  };
+  enum DBState {
+	FRESH, EXISTING
+  };
 
-		Benchmark()
-				: db_(nullptr), db_num_(0), num_(FLAGS_num), reads_(
-				FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads), bytes_(0), rand_(301) {
-			std::vector<std::string> files;
-			std::string test_dir;
-			Env::Default()->GetTestDirectory(&test_dir);
-			Env::Default()->GetChildren(test_dir, &files);
-			if (!FLAGS_use_existing_db) {
-				for (int i = 0; i < files.size(); i++) {
-					if (Slice(files[i]).starts_with("dbbench_sqlite3")) {
-						std::string file_name(test_dir);
-						file_name += "/";
-						file_name += files[i];
-						Env::Default()->RemoveFile(file_name.c_str());
-					}
-				}
-			}
-		}
+  Benchmark()
+	  : db_(nullptr), db_num_(0), num_(FLAGS_num), reads_(
+	  FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads), bytes_(0), rand_(301) {
+	  std::vector<std::string> files;
+	  std::string test_dir;
+	  Env::Default()->GetTestDirectory(&test_dir);
+	  Env::Default()->GetChildren(test_dir, &files);
+	  if (!FLAGS_use_existing_db) {
+		  for (int i = 0; i < files.size(); i++) {
+			  if (Slice(files[i]).starts_with("dbbench_sqlite3")) {
+				  std::string file_name(test_dir);
+				  file_name += "/";
+				  file_name += files[i];
+				  Env::Default()->RemoveFile(file_name.c_str());
+			  }
+		  }
+	  }
+  }
 
-		~Benchmark() {
-			int status = sqlite3_close(db_);
-			ErrorCheck(status);
-		}
+  ~Benchmark() {
+	  int status = sqlite3_close(db_);
+	  ErrorCheck(status);
+  }
 
-		void Run() {
-			PrintHeader();
-			Open();
+  void Run() {
+	  PrintHeader();
+	  Open();
 
-			const char *benchmarks = FLAGS_benchmarks;
-			while (benchmarks != nullptr) {
-				const char *sep = strchr(benchmarks, ',');
-				Slice name;
-				if (sep == nullptr) {
-					name = benchmarks;
-					benchmarks = nullptr;
-				} else {
-					name = Slice(benchmarks, sep - benchmarks);
-					benchmarks = sep + 1;
-				}
+	  const char *benchmarks = FLAGS_benchmarks;
+	  while (benchmarks != nullptr) {
+		  const char *sep = strchr(benchmarks, ',');
+		  Slice name;
+		  if (sep == nullptr) {
+			  name = benchmarks;
+			  benchmarks = nullptr;
+		  } else {
+			  name = Slice(benchmarks, sep - benchmarks);
+			  benchmarks = sep + 1;
+		  }
 
-				bytes_ = 0;
-				Start();
+		  bytes_ = 0;
+		  Start();
 
-				bool known = true;
-				bool write_sync = false;
-				if (name == Slice("fillseq")) {
-					Write(write_sync, SEQUENTIAL, FRESH, num_, FLAGS_value_size, 1);
-					WalCheckpoint(db_);
-				} else if (name == Slice("fillseqbatch")) {
-					Write(write_sync, SEQUENTIAL, FRESH, num_, FLAGS_value_size, 1000);
-					WalCheckpoint(db_);
-				} else if (name == Slice("fillrandom")) {
-					Write(write_sync, RANDOM, FRESH, num_, FLAGS_value_size, 1);
-					WalCheckpoint(db_);
-				} else if (name == Slice("fillrandbatch")) {
-					Write(write_sync, RANDOM, FRESH, num_, FLAGS_value_size, 1000);
-					WalCheckpoint(db_);
-				} else if (name == Slice("overwrite")) {
-					Write(write_sync, RANDOM, EXISTING, num_, FLAGS_value_size, 1);
-					WalCheckpoint(db_);
-				} else if (name == Slice("overwritebatch")) {
-					Write(write_sync, RANDOM, EXISTING, num_, FLAGS_value_size, 1000);
-					WalCheckpoint(db_);
-				} else if (name == Slice("fillrandsync")) {
-					write_sync = true;
-					Write(write_sync, RANDOM, FRESH, num_ / 100, FLAGS_value_size, 1);
-					WalCheckpoint(db_);
-				} else if (name == Slice("fillseqsync")) {
-					write_sync = true;
-					Write(write_sync, SEQUENTIAL, FRESH, num_ / 100, FLAGS_value_size, 1);
-					WalCheckpoint(db_);
-				} else if (name == Slice("fillrand100K")) {
-					Write(write_sync, RANDOM, FRESH, num_ / 1000, 100 * 1000, 1);
-					WalCheckpoint(db_);
-				} else if (name == Slice("fillseq100K")) {
-					Write(write_sync, SEQUENTIAL, FRESH, num_ / 1000, 100 * 1000, 1);
-					WalCheckpoint(db_);
-				} else if (name == Slice("readseq")) {
-					ReadSequential();
-				} else if (name == Slice("readrandom")) {
-					Read(RANDOM, 1);
-				} else if (name == Slice("readrand100K")) {
-					int n = reads_;
-					reads_ /= 1000;
-					Read(RANDOM, 1);
-					reads_ = n;
-				} else {
-					known = false;
-					if (name != Slice()) {  // No error message for empty name
-						std::fprintf(stderr, "unknown benchmark '%s'\n", name.ToString().c_str());
-					}
-				}
-				if (known) {
-					Stop(name);
-				}
-			}
-		}
+		  bool known = true;
+		  bool write_sync = false;
+		  if (name == Slice("fillseq")) {
+			  Write(write_sync, SEQUENTIAL, FRESH, num_, FLAGS_value_size, 1);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("fillseqbatch")) {
+			  Write(write_sync, SEQUENTIAL, FRESH, num_, FLAGS_value_size, 1000);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("fillrandom")) {
+			  Write(write_sync, RANDOM, FRESH, num_, FLAGS_value_size, 1);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("fillrandbatch")) {
+			  Write(write_sync, RANDOM, FRESH, num_, FLAGS_value_size, 1000);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("overwrite")) {
+			  Write(write_sync, RANDOM, EXISTING, num_, FLAGS_value_size, 1);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("overwritebatch")) {
+			  Write(write_sync, RANDOM, EXISTING, num_, FLAGS_value_size, 1000);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("fillrandsync")) {
+			  write_sync = true;
+			  Write(write_sync, RANDOM, FRESH, num_ / 100, FLAGS_value_size, 1);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("fillseqsync")) {
+			  write_sync = true;
+			  Write(write_sync, SEQUENTIAL, FRESH, num_ / 100, FLAGS_value_size, 1);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("fillrand100K")) {
+			  Write(write_sync, RANDOM, FRESH, num_ / 1000, 100 * 1000, 1);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("fillseq100K")) {
+			  Write(write_sync, SEQUENTIAL, FRESH, num_ / 1000, 100 * 1000, 1);
+			  WalCheckpoint(db_);
+		  } else if (name == Slice("readseq")) {
+			  ReadSequential();
+		  } else if (name == Slice("readrandom")) {
+			  Read(RANDOM, 1);
+		  } else if (name == Slice("readrand100K")) {
+			  int n = reads_;
+			  reads_ /= 1000;
+			  Read(RANDOM, 1);
+			  reads_ = n;
+		  } else {
+			  known = false;
+			  if (name != Slice()) {  // No error message for empty name
+				  std::fprintf(stderr, "unknown benchmark '%s'\n", name.ToString().c_str());
+			  }
+		  }
+		  if (known) {
+			  Stop(name);
+		  }
+	  }
+  }
 
-		void Open() {
-			assert(db_ == nullptr);
+  void Open() {
+	  assert(db_ == nullptr);
 
-			int status;
-			char file_name[100];
-			char *err_msg = nullptr;
-			db_num_++;
+	  int status;
+	  char file_name[100];
+	  char *err_msg = nullptr;
+	  db_num_++;
 
-			// Open database
-			std::string tmp_dir;
-			Env::Default()->GetTestDirectory(&tmp_dir);
-			std::snprintf(file_name, sizeof(file_name), "%s/dbbench_sqlite3-%d.db", tmp_dir.c_str(), db_num_);
-			status = sqlite3_open(file_name, &db_);
-			if (status) {
-				std::fprintf(stderr, "open error: %s\n", sqlite3_errmsg(db_));
-				std::exit(1);
-			}
+	  // Open database
+	  std::string tmp_dir;
+	  Env::Default()->GetTestDirectory(&tmp_dir);
+	  std::snprintf(file_name, sizeof(file_name), "%s/dbbench_sqlite3-%d.db", tmp_dir.c_str(), db_num_);
+	  status = sqlite3_open(file_name, &db_);
+	  if (status) {
+		  std::fprintf(stderr, "open error: %s\n", sqlite3_errmsg(db_));
+		  std::exit(1);
+	  }
 
-			// Change SQLite cache size
-			char cache_size[100];
-			std::snprintf(cache_size, sizeof(cache_size), "PRAGMA cache_size = %d", FLAGS_num_pages);
-			status = sqlite3_exec(db_, cache_size, nullptr, nullptr, &err_msg);
-			ExecErrorCheck(status, err_msg);
+	  // Change SQLite cache size
+	  char cache_size[100];
+	  std::snprintf(cache_size, sizeof(cache_size), "PRAGMA cache_size = %d", FLAGS_num_pages);
+	  status = sqlite3_exec(db_, cache_size, nullptr, nullptr, &err_msg);
+	  ExecErrorCheck(status, err_msg);
 
-			// FLAGS_page_size is defaulted to 1024
-			if (FLAGS_page_size != 1024) {
-				char page_size[100];
-				std::snprintf(page_size, sizeof(page_size), "PRAGMA page_size = %d", FLAGS_page_size);
-				status = sqlite3_exec(db_, page_size, nullptr, nullptr, &err_msg);
-				ExecErrorCheck(status, err_msg);
-			}
+	  // FLAGS_page_size is defaulted to 1024
+	  if (FLAGS_page_size != 1024) {
+		  char page_size[100];
+		  std::snprintf(page_size, sizeof(page_size), "PRAGMA page_size = %d", FLAGS_page_size);
+		  status = sqlite3_exec(db_, page_size, nullptr, nullptr, &err_msg);
+		  ExecErrorCheck(status, err_msg);
+	  }
 
-			// Change journal mode to WAL if WAL enabled flag is on
-			if (FLAGS_WAL_enabled) {
-				std::string WAL_stmt = "PRAGMA journal_mode = WAL";
+	  // Change journal mode to WAL if WAL enabled flag is on
+	  if (FLAGS_WAL_enabled) {
+		  std::string WAL_stmt = "PRAGMA journal_mode = WAL";
 
-				// LevelDB's default cache size is a combined 4 MB
-				std::string WAL_checkpoint = "PRAGMA wal_autocheckpoint = 4096";
-				status = sqlite3_exec(db_, WAL_stmt.c_str(), nullptr, nullptr, &err_msg);
-				ExecErrorCheck(status, err_msg);
-				status = sqlite3_exec(db_, WAL_checkpoint.c_str(), nullptr, nullptr, &err_msg);
-				ExecErrorCheck(status, err_msg);
-			}
+		  // LevelDB's default cache size is a combined 4 MB
+		  std::string WAL_checkpoint = "PRAGMA wal_autocheckpoint = 4096";
+		  status = sqlite3_exec(db_, WAL_stmt.c_str(), nullptr, nullptr, &err_msg);
+		  ExecErrorCheck(status, err_msg);
+		  status = sqlite3_exec(db_, WAL_checkpoint.c_str(), nullptr, nullptr, &err_msg);
+		  ExecErrorCheck(status, err_msg);
+	  }
 
-			// Change locking mode to exclusive and create tables/index for database
-			std::string locking_stmt = "PRAGMA locking_mode = EXCLUSIVE";
-			std::string create_stmt = "CREATE TABLE test (key blob, value blob, PRIMARY KEY(key))";
-			if (!FLAGS_use_rowids) create_stmt += " WITHOUT ROWID";
-			std::string stmt_array[] = {locking_stmt, create_stmt};
-			int stmt_array_length = sizeof(stmt_array) / sizeof(std::string);
-			for (int i = 0; i < stmt_array_length; i++) {
-				status = sqlite3_exec(db_, stmt_array[i].c_str(), nullptr, nullptr, &err_msg);
-				ExecErrorCheck(status, err_msg);
-			}
-		}
+	  // Change locking mode to exclusive and create tables/index for database
+	  std::string locking_stmt = "PRAGMA locking_mode = EXCLUSIVE";
+	  std::string create_stmt = "CREATE TABLE test (key blob, value blob, PRIMARY KEY(key))";
+	  if (!FLAGS_use_rowids) create_stmt += " WITHOUT ROWID";
+	  std::string stmt_array[] = {locking_stmt, create_stmt};
+	  int stmt_array_length = sizeof(stmt_array) / sizeof(std::string);
+	  for (int i = 0; i < stmt_array_length; i++) {
+		  status = sqlite3_exec(db_, stmt_array[i].c_str(), nullptr, nullptr, &err_msg);
+		  ExecErrorCheck(status, err_msg);
+	  }
+  }
 
-		void Write(bool write_sync, Order order, DBState state, int num_entries, int value_size
-				, int entries_per_batch) {
-			// Create new database if state == FRESH
-			if (state == FRESH) {
-				if (FLAGS_use_existing_db) {
-					message_ = "skipping (--use_existing_db is true)";
-					return;
-				}
-				sqlite3_close(db_);
-				db_ = nullptr;
-				Open();
-				Start();
-			}
+  void Write(bool write_sync, Order order, DBState state, int num_entries, int value_size, int entries_per_batch) {
+	  // Create new database if state == FRESH
+	  if (state == FRESH) {
+		  if (FLAGS_use_existing_db) {
+			  message_ = "skipping (--use_existing_db is true)";
+			  return;
+		  }
+		  sqlite3_close(db_);
+		  db_ = nullptr;
+		  Open();
+		  Start();
+	  }
 
-			if (num_entries != num_) {
-				char msg[100];
-				std::snprintf(msg, sizeof(msg), "(%d ops)", num_entries);
-				message_ = msg;
-			}
+	  if (num_entries != num_) {
+		  char msg[100];
+		  std::snprintf(msg, sizeof(msg), "(%d ops)", num_entries);
+		  message_ = msg;
+	  }
 
-			char *err_msg = nullptr;
-			int status;
+	  char *err_msg = nullptr;
+	  int status;
 
-			sqlite3_stmt *replace_stmt, *begin_trans_stmt, *end_trans_stmt;
-			std::string replace_str = "REPLACE INTO test (key, value) VALUES (?, ?)";
-			std::string begin_trans_str = "BEGIN TRANSACTION;";
-			std::string end_trans_str = "END TRANSACTION;";
+	  sqlite3_stmt *replace_stmt, *begin_trans_stmt, *end_trans_stmt;
+	  std::string replace_str = "REPLACE INTO test (key, value) VALUES (?, ?)";
+	  std::string begin_trans_str = "BEGIN TRANSACTION;";
+	  std::string end_trans_str = "END TRANSACTION;";
 
-			// Check for synchronous flag in options
-			std::string sync_stmt = (write_sync) ? "PRAGMA synchronous = FULL" : "PRAGMA synchronous = OFF";
-			status = sqlite3_exec(db_, sync_stmt.c_str(), nullptr, nullptr, &err_msg);
-			ExecErrorCheck(status, err_msg);
+	  // Check for synchronous flag in options
+	  std::string sync_stmt = (write_sync) ? "PRAGMA synchronous = FULL" : "PRAGMA synchronous = OFF";
+	  status = sqlite3_exec(db_, sync_stmt.c_str(), nullptr, nullptr, &err_msg);
+	  ExecErrorCheck(status, err_msg);
 
-			// Preparing sqlite3 statements
-			status = sqlite3_prepare_v2(db_, replace_str.c_str(), -1, &replace_stmt, nullptr);
-			ErrorCheck(status);
-			status = sqlite3_prepare_v2(db_, begin_trans_str.c_str(), -1, &begin_trans_stmt, nullptr);
-			ErrorCheck(status);
-			status = sqlite3_prepare_v2(db_, end_trans_str.c_str(), -1, &end_trans_stmt, nullptr);
-			ErrorCheck(status);
+	  // Preparing sqlite3 statements
+	  status = sqlite3_prepare_v2(db_, replace_str.c_str(), -1, &replace_stmt, nullptr);
+	  ErrorCheck(status);
+	  status = sqlite3_prepare_v2(db_, begin_trans_str.c_str(), -1, &begin_trans_stmt, nullptr);
+	  ErrorCheck(status);
+	  status = sqlite3_prepare_v2(db_, end_trans_str.c_str(), -1, &end_trans_stmt, nullptr);
+	  ErrorCheck(status);
 
-			bool transaction = (entries_per_batch > 1);
-			for (int i = 0; i < num_entries; i += entries_per_batch) {
-				// Begin write transaction
-				if (FLAGS_transaction && transaction) {
-					status = sqlite3_step(begin_trans_stmt);
-					StepErrorCheck(status);
-					status = sqlite3_reset(begin_trans_stmt);
-					ErrorCheck(status);
-				}
+	  bool transaction = (entries_per_batch > 1);
+	  for (int i = 0; i < num_entries; i += entries_per_batch) {
+		  // Begin write transaction
+		  if (FLAGS_transaction && transaction) {
+			  status = sqlite3_step(begin_trans_stmt);
+			  StepErrorCheck(status);
+			  status = sqlite3_reset(begin_trans_stmt);
+			  ErrorCheck(status);
+		  }
 
-				// Create and execute SQL statements
-				for (int j = 0; j < entries_per_batch; j++) {
-					const char *value = gen_.Generate(value_size).data();
+		  // Create and execute SQL statements
+		  for (int j = 0; j < entries_per_batch; j++) {
+			  const char *value = gen_.Generate(value_size).data();
 
-					// Create values for key-value pair
-					const int k = (order == SEQUENTIAL) ? i + j : (rand_.Next() % num_entries);
-					char key[100];
-					std::snprintf(key, sizeof(key), "%016d", k);
+			  // Create values for key-value pair
+			  const int k = (order == SEQUENTIAL) ? i + j : (rand_.Next() % num_entries);
+			  char key[100];
+			  std::snprintf(key, sizeof(key), "%016d", k);
 
-					// Bind KV values into replace_stmt
-					status = sqlite3_bind_blob(replace_stmt, 1, key, 16, SQLITE_STATIC);
-					ErrorCheck(status);
-					status = sqlite3_bind_blob(replace_stmt, 2, value, value_size, SQLITE_STATIC);
-					ErrorCheck(status);
+			  // Bind KV values into replace_stmt
+			  status = sqlite3_bind_blob(replace_stmt, 1, key, 16, SQLITE_STATIC);
+			  ErrorCheck(status);
+			  status = sqlite3_bind_blob(replace_stmt, 2, value, value_size, SQLITE_STATIC);
+			  ErrorCheck(status);
 
-					// Execute replace_stmt
-					bytes_ += value_size + strlen(key);
-					status = sqlite3_step(replace_stmt);
-					StepErrorCheck(status);
+			  // Execute replace_stmt
+			  bytes_ += value_size + strlen(key);
+			  status = sqlite3_step(replace_stmt);
+			  StepErrorCheck(status);
 
-					// Reset SQLite statement for another use
-					status = sqlite3_clear_bindings(replace_stmt);
-					ErrorCheck(status);
-					status = sqlite3_reset(replace_stmt);
-					ErrorCheck(status);
+			  // Reset SQLite statement for another use
+			  status = sqlite3_clear_bindings(replace_stmt);
+			  ErrorCheck(status);
+			  status = sqlite3_reset(replace_stmt);
+			  ErrorCheck(status);
 
-					FinishedSingleOp();
-				}
+			  FinishedSingleOp();
+		  }
 
-				// End write transaction
-				if (FLAGS_transaction && transaction) {
-					status = sqlite3_step(end_trans_stmt);
-					StepErrorCheck(status);
-					status = sqlite3_reset(end_trans_stmt);
-					ErrorCheck(status);
-				}
-			}
+		  // End write transaction
+		  if (FLAGS_transaction && transaction) {
+			  status = sqlite3_step(end_trans_stmt);
+			  StepErrorCheck(status);
+			  status = sqlite3_reset(end_trans_stmt);
+			  ErrorCheck(status);
+		  }
+	  }
 
-			status = sqlite3_finalize(replace_stmt);
-			ErrorCheck(status);
-			status = sqlite3_finalize(begin_trans_stmt);
-			ErrorCheck(status);
-			status = sqlite3_finalize(end_trans_stmt);
-			ErrorCheck(status);
-		}
+	  status = sqlite3_finalize(replace_stmt);
+	  ErrorCheck(status);
+	  status = sqlite3_finalize(begin_trans_stmt);
+	  ErrorCheck(status);
+	  status = sqlite3_finalize(end_trans_stmt);
+	  ErrorCheck(status);
+  }
 
-		void Read(Order order, int entries_per_batch) {
-			int status;
-			sqlite3_stmt *read_stmt, *begin_trans_stmt, *end_trans_stmt;
+  void Read(Order order, int entries_per_batch) {
+	  int status;
+	  sqlite3_stmt *read_stmt, *begin_trans_stmt, *end_trans_stmt;
 
-			std::string read_str = "SELECT * FROM test WHERE key = ?";
-			std::string begin_trans_str = "BEGIN TRANSACTION;";
-			std::string end_trans_str = "END TRANSACTION;";
+	  std::string read_str = "SELECT * FROM test WHERE key = ?";
+	  std::string begin_trans_str = "BEGIN TRANSACTION;";
+	  std::string end_trans_str = "END TRANSACTION;";
 
-			// Preparing sqlite3 statements
-			status = sqlite3_prepare_v2(db_, begin_trans_str.c_str(), -1, &begin_trans_stmt, nullptr);
-			ErrorCheck(status);
-			status = sqlite3_prepare_v2(db_, end_trans_str.c_str(), -1, &end_trans_stmt, nullptr);
-			ErrorCheck(status);
-			status = sqlite3_prepare_v2(db_, read_str.c_str(), -1, &read_stmt, nullptr);
-			ErrorCheck(status);
+	  // Preparing sqlite3 statements
+	  status = sqlite3_prepare_v2(db_, begin_trans_str.c_str(), -1, &begin_trans_stmt, nullptr);
+	  ErrorCheck(status);
+	  status = sqlite3_prepare_v2(db_, end_trans_str.c_str(), -1, &end_trans_stmt, nullptr);
+	  ErrorCheck(status);
+	  status = sqlite3_prepare_v2(db_, read_str.c_str(), -1, &read_stmt, nullptr);
+	  ErrorCheck(status);
 
-			bool transaction = (entries_per_batch > 1);
-			for (int i = 0; i < reads_; i += entries_per_batch) {
-				// Begin read transaction
-				if (FLAGS_transaction && transaction) {
-					status = sqlite3_step(begin_trans_stmt);
-					StepErrorCheck(status);
-					status = sqlite3_reset(begin_trans_stmt);
-					ErrorCheck(status);
-				}
+	  bool transaction = (entries_per_batch > 1);
+	  for (int i = 0; i < reads_; i += entries_per_batch) {
+		  // Begin read transaction
+		  if (FLAGS_transaction && transaction) {
+			  status = sqlite3_step(begin_trans_stmt);
+			  StepErrorCheck(status);
+			  status = sqlite3_reset(begin_trans_stmt);
+			  ErrorCheck(status);
+		  }
 
-				// Create and execute SQL statements
-				for (int j = 0; j < entries_per_batch; j++) {
-					// Create key value
-					char key[100];
-					int k = (order == SEQUENTIAL) ? i + j : (rand_.Next() % reads_);
-					std::snprintf(key, sizeof(key), "%016d", k);
+		  // Create and execute SQL statements
+		  for (int j = 0; j < entries_per_batch; j++) {
+			  // Create key value
+			  char key[100];
+			  int k = (order == SEQUENTIAL) ? i + j : (rand_.Next() % reads_);
+			  std::snprintf(key, sizeof(key), "%016d", k);
 
-					// Bind key value into read_stmt
-					status = sqlite3_bind_blob(read_stmt, 1, key, 16, SQLITE_STATIC);
-					ErrorCheck(status);
+			  // Bind key value into read_stmt
+			  status = sqlite3_bind_blob(read_stmt, 1, key, 16, SQLITE_STATIC);
+			  ErrorCheck(status);
 
-					// Execute read statement
-					while ((status = sqlite3_step(read_stmt)) == SQLITE_ROW) {
-					}
-					StepErrorCheck(status);
+			  // Execute read statement
+			  while ((status = sqlite3_step(read_stmt)) == SQLITE_ROW) {
+			  }
+			  StepErrorCheck(status);
 
-					// Reset SQLite statement for another use
-					status = sqlite3_clear_bindings(read_stmt);
-					ErrorCheck(status);
-					status = sqlite3_reset(read_stmt);
-					ErrorCheck(status);
-					FinishedSingleOp();
-				}
+			  // Reset SQLite statement for another use
+			  status = sqlite3_clear_bindings(read_stmt);
+			  ErrorCheck(status);
+			  status = sqlite3_reset(read_stmt);
+			  ErrorCheck(status);
+			  FinishedSingleOp();
+		  }
 
-				// End read transaction
-				if (FLAGS_transaction && transaction) {
-					status = sqlite3_step(end_trans_stmt);
-					StepErrorCheck(status);
-					status = sqlite3_reset(end_trans_stmt);
-					ErrorCheck(status);
-				}
-			}
+		  // End read transaction
+		  if (FLAGS_transaction && transaction) {
+			  status = sqlite3_step(end_trans_stmt);
+			  StepErrorCheck(status);
+			  status = sqlite3_reset(end_trans_stmt);
+			  ErrorCheck(status);
+		  }
+	  }
 
-			status = sqlite3_finalize(read_stmt);
-			ErrorCheck(status);
-			status = sqlite3_finalize(begin_trans_stmt);
-			ErrorCheck(status);
-			status = sqlite3_finalize(end_trans_stmt);
-			ErrorCheck(status);
-		}
+	  status = sqlite3_finalize(read_stmt);
+	  ErrorCheck(status);
+	  status = sqlite3_finalize(begin_trans_stmt);
+	  ErrorCheck(status);
+	  status = sqlite3_finalize(end_trans_stmt);
+	  ErrorCheck(status);
+  }
 
-		void ReadSequential() {
-			int status;
-			sqlite3_stmt *pStmt;
-			std::string read_str = "SELECT * FROM test ORDER BY key";
+  void ReadSequential() {
+	  int status;
+	  sqlite3_stmt *pStmt;
+	  std::string read_str = "SELECT * FROM test ORDER BY key";
 
-			status = sqlite3_prepare_v2(db_, read_str.c_str(), -1, &pStmt, nullptr);
-			ErrorCheck(status);
-			for (int i = 0; i < reads_ && SQLITE_ROW == sqlite3_step(pStmt); i++) {
-				bytes_ += sqlite3_column_bytes(pStmt, 1) + sqlite3_column_bytes(pStmt, 2);
-				FinishedSingleOp();
-			}
+	  status = sqlite3_prepare_v2(db_, read_str.c_str(), -1, &pStmt, nullptr);
+	  ErrorCheck(status);
+	  for (int i = 0; i < reads_ && SQLITE_ROW == sqlite3_step(pStmt); i++) {
+		  bytes_ += sqlite3_column_bytes(pStmt, 1) + sqlite3_column_bytes(pStmt, 2);
+		  FinishedSingleOp();
+	  }
 
-			status = sqlite3_finalize(pStmt);
-			ErrorCheck(status);
-		}
-	};
+	  status = sqlite3_finalize(pStmt);
+	  ErrorCheck(status);
+  }
+};
 
 }  // namespace leveldb
 

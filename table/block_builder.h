@@ -12,44 +12,44 @@
 
 namespace leveldb {
 
-	struct Options;
+struct Options;
 
-	// sst 是由多个 block 构成的
-	class BlockBuilder {
-	public:
-		explicit BlockBuilder(const Options *options);
+// sst 是由多个 block 构成的
+class BlockBuilder {
+ public:
+  explicit BlockBuilder(const Options *options);
 
-		BlockBuilder(const BlockBuilder &) = delete;
+  BlockBuilder(const BlockBuilder &) = delete;
 
-		BlockBuilder &operator=(const BlockBuilder &) = delete;
+  BlockBuilder &operator=(const BlockBuilder &) = delete;
 
-		// Reset the contents as if the BlockBuilder was just constructed.
-		void Reset();
+  // Reset the contents as if the BlockBuilder was just constructed.
+  void Reset();
 
-		// REQUIRES: Finish() has not been called since the last call to Reset().
-		// REQUIRES: key is larger than any previously added key 有序插入
-		void Add(const Slice &key, const Slice &value);
+  // REQUIRES: Finish() has not been called since the last call to Reset().
+  // REQUIRES: key is larger than any previously added key 有序插入
+  void Add(const Slice &key, const Slice &value);
 
-		// Finish building the block and return a slice that refers to the block contents.
-		// The returned slice will remain valid for the lifetime of this builder or until Reset() is called.
-		// 返回数据
-		Slice Finish();
+  // Finish building the block and return a slice that refers to the block contents.
+  // The returned slice will remain valid for the lifetime of this builder or until Reset() is called.
+  // 返回数据
+  Slice Finish();
 
-		// Returns an estimate of the current (uncompressed) size of the block
-		// we are building.
-		size_t CurrentSizeEstimate() const;
+  // Returns an estimate of the current (uncompressed) size of the block
+  // we are building.
+  size_t CurrentSizeEstimate() const;
 
-		// Return true iff no entries have been added since the last Reset()
-		bool empty() const { return buffer_.empty(); }
+  // Return true iff no entries have been added since the last Reset()
+  bool empty() const { return buffer_.empty(); }
 
-	private:
-		const Options *options_;
-		std::string buffer_;              // Destination buffer
-		std::vector<uint32_t> restarts_;  // Restart points  存储重启点， 就是全量key的储存点
-		int counter_;                     // Number of entries emitted since restart 省略key计数器
-		bool finished_;                   // Has Finish() been called?
-		std::string last_key_;
-	};
+ private:
+  const Options *options_;
+  std::string buffer_;              // Destination buffer
+  std::vector<uint32_t> restarts_;  // Restart points  存储重启点， 就是全量key的储存点
+  int counter_;                     // Number of entries emitted since restart 省略key计数器
+  bool finished_;                   // Has Finish() been called?
+  std::string last_key_;
+};
 
 }  // namespace leveldb
 

@@ -45,105 +45,108 @@ using leveldb::WriteOptions;
 extern "C" {
 
 struct leveldb_t {
-	DB *rep;
+  DB *rep;
 };
 struct leveldb_iterator_t {
-	Iterator *rep;
+  Iterator *rep;
 };
 struct leveldb_writebatch_t {
-	WriteBatch rep;
+  WriteBatch rep;
 };
 struct leveldb_snapshot_t {
-	const Snapshot *rep;
+  const Snapshot *rep;
 };
 struct leveldb_readoptions_t {
-	ReadOptions rep;
+  ReadOptions rep;
 };
 struct leveldb_writeoptions_t {
-	WriteOptions rep;
+  WriteOptions rep;
 };
 struct leveldb_options_t {
-	Options rep;
+  Options rep;
 };
 struct leveldb_cache_t {
-	Cache *rep;
+  Cache *rep;
 };
 struct leveldb_seqfile_t {
-	SequentialFile *rep;
+  SequentialFile *rep;
 };
 struct leveldb_randomfile_t {
-	RandomAccessFile *rep;
+  RandomAccessFile *rep;
 };
 struct leveldb_writablefile_t {
-	WritableFile *rep;
+  WritableFile *rep;
 };
 struct leveldb_logger_t {
-	Logger *rep;
+  Logger *rep;
 };
 struct leveldb_filelock_t {
-	FileLock *rep;
+  FileLock *rep;
 };
 
 struct leveldb_comparator_t : public Comparator {
-	~leveldb_comparator_t() override { (*destructor_)(state_); }
+  ~leveldb_comparator_t() override { (*destructor_)(state_); }
 
-	int Compare(const Slice &a, const Slice &b) const override {
-		return (*compare_)(state_, a.data(), a.size(), b.data(), b.size());
-	}
+  int Compare(const Slice &a, const Slice &b) const override {
+	  return (*compare_)(state_, a.data(), a.size(), b.data(), b.size());
+  }
 
-	const char *Name() const override { return (*name_)(state_); }
+  const char *Name() const override { return (*name_)(state_); }
 
-	// No-ops since the C binding does not support key shortening methods.
-	void FindShortestSeparator(std::string *, const Slice &) const override {}
+  // No-ops since the C binding does not support key shortening methods.
+  void FindShortestSeparator(std::string *, const Slice &) const override {}
 
-	void FindShortSuccessor(std::string *key) const override {}
+  void FindShortSuccessor(std::string *key) const override {}
 
-	void *state_;
+  void *state_;
 
-	void (*destructor_)(void *);
+  void (*destructor_)(void *);
 
-	int (*compare_)(void *, const char *a, size_t alen, const char *b, size_t blen);
+  int (*compare_)(void *, const char *a, size_t alen, const char *b, size_t blen);
 
-	const char *(*name_)(void *);
+  const char *(*name_)(void *);
 };
 
 struct leveldb_filterpolicy_t : public FilterPolicy {
-	~leveldb_filterpolicy_t() override { (*destructor_)(state_); }
+  ~leveldb_filterpolicy_t() override { (*destructor_)(state_); }
 
-	const char *Name() const override { return (*name_)(state_); }
+  const char *Name() const override { return (*name_)(state_); }
 
-	void CreateFilter(const Slice *keys, int n, std::string *dst) const override {
-		std::vector<const char *> key_pointers(n);
-		std::vector<size_t> key_sizes(n);
-		for (int i = 0; i < n; i++) {
-			key_pointers[i] = keys[i].data();
-			key_sizes[i] = keys[i].size();
-		}
-		size_t len;
-		char *filter = (*create_)(state_, &key_pointers[0], &key_sizes[0], n, &len);
-		dst->append(filter, len);
-		free(filter);
-	}
+  void CreateFilter(const Slice *keys, int n, std::string *dst) const override {
+	  std::vector<const char *> key_pointers(n);
+	  std::vector<size_t> key_sizes(n);
+	  for (int i = 0; i < n; i++) {
+		  key_pointers[i] = keys[i].data();
+		  key_sizes[i] = keys[i].size();
+	  }
+	  size_t len;
+	  char *filter = (*create_)(state_, &key_pointers[0], &key_sizes[0], n, &len);
+	  dst->append(filter, len);
+	  free(filter);
+  }
 
-	bool KeyMayMatch(const Slice &key, const Slice &filter) const override {
-		return (*key_match_)(state_, key.data(), key.size(), filter.data(), filter.size());
-	}
+  bool KeyMayMatch(const Slice &key, const Slice &filter) const override {
+	  return (*key_match_)(state_, key.data(), key.size(), filter.data(), filter.size());
+  }
 
-	void *state_;
+  void *state_;
 
-	void (*destructor_)(void *);
+  void (*destructor_)(void *);
 
-	const char *(*name_)(void *);
+  const char *(*name_)(void *);
 
-	char *(*create_)(void *, const char *const *key_array, const size_t *key_length_array, int num_keys
-			, size_t *filter_length);
+  char *(*create_)(void *,
+				   const char *const *key_array,
+				   const size_t *key_length_array,
+				   int num_keys,
+				   size_t *filter_length);
 
-	uint8_t (*key_match_)(void *, const char *key, size_t length, const char *filter, size_t filter_length);
+  uint8_t (*key_match_)(void *, const char *key, size_t length, const char *filter, size_t filter_length);
 };
 
 struct leveldb_env_t {
-	Env *rep;
-	bool is_default;
+  Env *rep;
+  bool is_default;
 };
 
 static bool SaveError(char **errptr, const Status &s) {
@@ -181,13 +184,21 @@ void leveldb_close(leveldb_t *db) {
 	delete db;
 }
 
-void leveldb_put(leveldb_t *db, const leveldb_writeoptions_t *options, const char *key, size_t keylen, const char *val
-		, size_t vallen, char **errptr) {
+void leveldb_put(leveldb_t *db,
+				 const leveldb_writeoptions_t *options,
+				 const char *key,
+				 size_t keylen,
+				 const char *val,
+				 size_t vallen,
+				 char **errptr) {
 	SaveError(errptr, db->rep->Put(options->rep, Slice(key, keylen), Slice(val, vallen)));
 }
 
-void leveldb_delete(leveldb_t *db, const leveldb_writeoptions_t *options, const char *key, size_t keylen
-		, char **errptr) {
+void leveldb_delete(leveldb_t *db,
+					const leveldb_writeoptions_t *options,
+					const char *key,
+					size_t keylen,
+					char **errptr) {
 	SaveError(errptr, db->rep->Delete(options->rep, Slice(key, keylen)));
 }
 
@@ -195,8 +206,12 @@ void leveldb_write(leveldb_t *db, const leveldb_writeoptions_t *options, leveldb
 	SaveError(errptr, db->rep->Write(options->rep, &batch->rep));
 }
 
-char *leveldb_get(leveldb_t *db, const leveldb_readoptions_t *options, const char *key, size_t keylen, size_t *vallen
-		, char **errptr) {
+char *leveldb_get(leveldb_t *db,
+				  const leveldb_readoptions_t *options,
+				  const char *key,
+				  size_t keylen,
+				  size_t *vallen,
+				  char **errptr) {
 	char *result = nullptr;
 	std::string tmp;
 	Status s = db->rep->Get(options->rep, Slice(key, keylen), &tmp);
@@ -239,9 +254,13 @@ char *leveldb_property_value(leveldb_t *db, const char *propname) {
 	}
 }
 
-void leveldb_approximate_sizes(leveldb_t *db, int num_ranges, const char *const *range_start_key
-		, const size_t *range_start_key_len, const char *const *range_limit_key, const size_t *range_limit_key_len
-		, uint64_t *sizes) {
+void leveldb_approximate_sizes(leveldb_t *db,
+							   int num_ranges,
+							   const char *const *range_start_key,
+							   const size_t *range_start_key_len,
+							   const char *const *range_limit_key,
+							   const size_t *range_limit_key_len,
+							   uint64_t *sizes) {
 	Range *ranges = new Range[num_ranges];
 	for (int i = 0; i < num_ranges; i++) {
 		ranges[i].start = Slice(range_start_key[i], range_start_key_len[i]);
@@ -251,14 +270,17 @@ void leveldb_approximate_sizes(leveldb_t *db, int num_ranges, const char *const 
 	delete[] ranges;
 }
 
-void leveldb_compact_range(leveldb_t *db, const char *start_key, size_t start_key_len, const char *limit_key
-		, size_t limit_key_len) {
+void leveldb_compact_range(leveldb_t *db,
+						   const char *start_key,
+						   size_t start_key_len,
+						   const char *limit_key,
+						   size_t limit_key_len) {
 	Slice a, b;
 	db->rep->CompactRange(
-			// Pass null Slice if corresponding "const char*" is null
-			(start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr), (limit_key
-																				? (b = Slice(limit_key, limit_key_len), &b)
-																				: nullptr));
+		// Pass null Slice if corresponding "const char*" is null
+		(start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr), (limit_key
+																			? (b = Slice(limit_key, limit_key_len), &b)
+																			: nullptr));
 }
 
 void leveldb_destroy_db(const leveldb_options_t *options, const char *name, char **errptr) {
@@ -326,23 +348,25 @@ void leveldb_writebatch_delete(leveldb_writebatch_t *b, const char *key, size_t 
 	b->rep.Delete(Slice(key, klen));
 }
 
-void leveldb_writebatch_iterate(const leveldb_writebatch_t *b, void *state, void (*put)(void *, const char *k
-		, size_t klen, const char *v, size_t vlen), void (*deleted)(void *, const char *k, size_t klen)) {
+void leveldb_writebatch_iterate(const leveldb_writebatch_t *b,
+								void *state,
+								void (*put)(void *, const char *k, size_t klen, const char *v, size_t vlen),
+								void (*deleted)(void *, const char *k, size_t klen)) {
 	class H : public WriteBatch::Handler {
-	public:
-		void *state_;
+	 public:
+	  void *state_;
 
-		void (*put_)(void *, const char *k, size_t klen, const char *v, size_t vlen);
+	  void (*put_)(void *, const char *k, size_t klen, const char *v, size_t vlen);
 
-		void (*deleted_)(void *, const char *k, size_t klen);
+	  void (*deleted_)(void *, const char *k, size_t klen);
 
-		void Put(const Slice &key, const Slice &value) override {
-			(*put_)(state_, key.data(), key.size(), value.data(), value.size());
-		}
+	  void Put(const Slice &key, const Slice &value) override {
+		  (*put_)(state_, key.data(), key.size(), value.data(), value.size());
+	  }
 
-		void Delete(const Slice &key) override {
-			(*deleted_)(state_, key.data(), key.size());
-		}
+	  void Delete(const Slice &key) override {
+		  (*deleted_)(state_, key.data(), key.size());
+	  }
 	};
 	H handler;
 	handler.state_ = state;
@@ -415,8 +439,14 @@ void leveldb_options_set_compression(leveldb_options_t *opt, int t) {
 	opt->rep.compression = static_cast<CompressionType>(t);
 }
 
-leveldb_comparator_t *leveldb_comparator_create(void *state, void (*destructor)(void *), int (*compare)(void *
-		, const char *a, size_t alen, const char *b, size_t blen), const char *(*name)(void *)) {
+leveldb_comparator_t *leveldb_comparator_create(void *state,
+												void (*destructor)(void *),
+												int (*compare)(void *,
+															   const char *a,
+															   size_t alen,
+															   const char *b,
+															   size_t blen),
+												const char *(*name)(void *)) {
 	leveldb_comparator_t *result = new leveldb_comparator_t;
 	result->state_ = state;
 	result->destructor_ = destructor;
@@ -427,10 +457,20 @@ leveldb_comparator_t *leveldb_comparator_create(void *state, void (*destructor)(
 
 void leveldb_comparator_destroy(leveldb_comparator_t *cmp) { delete cmp; }
 
-leveldb_filterpolicy_t *leveldb_filterpolicy_create(void *state, void (*destructor)(void *), char *(*create_filter)(
-		void *, const char *const *key_array, const size_t *key_length_array, int num_keys, size_t *filter_length)
-		, uint8_t (*key_may_match)(void *, const char *key, size_t length, const char *filter, size_t filter_length)
-		, const char *(*name)(void *)) {
+leveldb_filterpolicy_t *leveldb_filterpolicy_create(void *state,
+													void (*destructor)(void *),
+													char *(*create_filter)(
+														void *,
+														const char *const *key_array,
+														const size_t *key_length_array,
+														int num_keys,
+														size_t *filter_length),
+													uint8_t (*key_may_match)(void *,
+																			 const char *key,
+																			 size_t length,
+																			 const char *filter,
+																			 size_t filter_length),
+													const char *(*name)(void *)) {
 	leveldb_filterpolicy_t *result = new leveldb_filterpolicy_t;
 	result->state_ = state;
 	result->destructor_ = destructor;
@@ -449,21 +489,21 @@ leveldb_filterpolicy_t *leveldb_filterpolicy_create_bloom(int bits_per_key) {
 	// they delegate to a NewBloomFilterPolicy() instead of user
 	// supplied C functions.
 	struct Wrapper : public leveldb_filterpolicy_t {
-		static void DoNothing(void *) {}
+	  static void DoNothing(void *) {}
 
-		~Wrapper() { delete rep_; }
+	  ~Wrapper() { delete rep_; }
 
-		const char *Name() const { return rep_->Name(); }
+	  const char *Name() const { return rep_->Name(); }
 
-		void CreateFilter(const Slice *keys, int n, std::string *dst) const {
-			return rep_->CreateFilter(keys, n, dst);
-		}
+	  void CreateFilter(const Slice *keys, int n, std::string *dst) const {
+		  return rep_->CreateFilter(keys, n, dst);
+	  }
 
-		bool KeyMayMatch(const Slice &key, const Slice &filter) const {
-			return rep_->KeyMayMatch(key, filter);
-		}
+	  bool KeyMayMatch(const Slice &key, const Slice &filter) const {
+		  return rep_->KeyMayMatch(key, filter);
+	  }
 
-		const FilterPolicy *rep_;
+	  const FilterPolicy *rep_;
 	};
 	Wrapper *wrapper = new Wrapper;
 	wrapper->rep_ = NewBloomFilterPolicy(bits_per_key);

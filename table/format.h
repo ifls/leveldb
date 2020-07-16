@@ -14,97 +14,96 @@
 
 namespace leveldb {
 
-	class Block;
+class Block;
 
-	class RandomAccessFile;
+class RandomAccessFile;
 
-	struct ReadOptions;
+struct ReadOptions;
 
-	// BlockHandle is a pointer to the extent of a file that stores a data
-	// block or a meta block.
-	class BlockHandle {
-	public:
-		// Maximum encoding length of a BlockHandle
-		enum {
-			kMaxEncodedLength = 10 + 10
-		};  // 一个 uint64 经过varint64编码后, 最长 占 10B  ceil(64/7) =  10
+// BlockHandle is a pointer to the extent of a file that stores a data
+// block or a meta block.
+class BlockHandle {
+ public:
+  // Maximum encoding length of a BlockHandle
+  enum {
+	kMaxEncodedLength = 10 + 10
+  };  // 一个 uint64 经过varint64编码后, 最长 占 10B  ceil(64/7) =  10
 
-		BlockHandle();
+  BlockHandle();
 
-		// The offset of the block in the file.
-		uint64_t offset() const { return offset_; }
+  // The offset of the block in the file.
+  uint64_t offset() const { return offset_; }
 
-		void set_offset(uint64_t offset) { offset_ = offset; }
+  void set_offset(uint64_t offset) { offset_ = offset; }
 
-		// The size of the stored block
-		uint64_t size() const { return size_; }
+  // The size of the stored block
+  uint64_t size() const { return size_; }
 
-		void set_size(uint64_t size) { size_ = size; }
+  void set_size(uint64_t size) { size_ = size; }
 
-		void EncodeTo(std::string *dst) const;
+  void EncodeTo(std::string *dst) const;
 
-		Status DecodeFrom(Slice *input);
+  Status DecodeFrom(Slice *input);
 
-	private:
-		uint64_t offset_;  // 基址
-		uint64_t size_;  // 长度
-	};
+ private:
+  uint64_t offset_;  // 基址
+  uint64_t size_;  // 长度
+};
 
-	// Footer encapsulates the fixed information stored at the tail
-	// end of every table file.
-	class Footer {
-	public:
-		// Encoded length of a Footer.  Note that the serialization of a
-		// Footer will always occupy exactly this many bytes.  It consists
-		// of two block handles and a magic number.
-		enum {
-			kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8
-		};  //48B
+// Footer encapsulates the fixed information stored at the tail
+// end of every table file.
+class Footer {
+ public:
+  // Encoded length of a Footer.  Note that the serialization of a
+  // Footer will always occupy exactly this many bytes.  It consists
+  // of two block handles and a magic number.
+  enum {
+	kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8
+  };  //48B
 
-		Footer() = default;
+  Footer() = default;
 
-		// The block handle for the metaindex block of the table
-		const BlockHandle &metaindex_handle() const { return metaindex_handle_; }
+  // The block handle for the metaindex block of the table
+  const BlockHandle &metaindex_handle() const { return metaindex_handle_; }
 
-		void set_metaindex_handle(const BlockHandle &h) { metaindex_handle_ = h; }
+  void set_metaindex_handle(const BlockHandle &h) { metaindex_handle_ = h; }
 
-		// The block handle for the index block of the table
-		const BlockHandle &index_handle() const { return index_handle_; }
+  // The block handle for the index block of the table
+  const BlockHandle &index_handle() const { return index_handle_; }
 
-		void set_index_handle(const BlockHandle &h) { index_handle_ = h; }
+  void set_index_handle(const BlockHandle &h) { index_handle_ = h; }
 
-		void EncodeTo(std::string *dst) const;
+  void EncodeTo(std::string *dst) const;
 
-		Status DecodeFrom(Slice *input);
+  Status DecodeFrom(Slice *input);
 
-	private:
-		BlockHandle metaindex_handle_;
-		BlockHandle index_handle_;
-	};
+ private:
+  BlockHandle metaindex_handle_;
+  BlockHandle index_handle_;
+};
 
-	// kTableMagicNumber was picked by running
-	//    echo http://code.google.com/p/leveldb/ | sha1sum
-	// and taking the leading 64 bits.
-	// sst 魔树 ull
-	static const uint64_t kTableMagicNumber = 0xdb4775248b80fb57ull;
+// kTableMagicNumber was picked by running
+//    echo http://code.google.com/p/leveldb/ | sha1sum
+// and taking the leading 64 bits.
+// sst 魔树 ull
+static const uint64_t kTableMagicNumber = 0xdb4775248b80fb57ull;
 
-	// 1-byte type + 32-bit crc  5B  用于数据块的尾部
-	static const size_t kBlockTrailerSize = 5;
+// 1-byte type + 32-bit crc  5B  用于数据块的尾部
+static const size_t kBlockTrailerSize = 5;
 
-	struct BlockContents {
-		Slice data;           // Actual contents of data
-		bool cachable;        // True iff data can be cached
-		bool heap_allocated;  // True iff caller should delete[] data.data()
-	};
+struct BlockContents {
+  Slice data;           // Actual contents of data
+  bool cachable;        // True iff data can be cached
+  bool heap_allocated;  // True iff caller should delete[] data.data()
+};
 
-	// Read the block identified by "handle" from "file".  On failure
-	// return non-OK.  On success fill *result and return OK.
-	Status ReadBlock(RandomAccessFile *file, const ReadOptions &options, const BlockHandle &handle
-			, BlockContents *result);
+// Read the block identified by "handle" from "file".  On failure
+// return non-OK.  On success fill *result and return OK.
+Status ReadBlock(RandomAccessFile *file, const ReadOptions &options, const BlockHandle &handle, BlockContents *result);
 
-	// Implementation details follow.  Clients should ignore,
+// Implementation details follow.  Clients should ignore,
 
-	inline BlockHandle::BlockHandle() : offset_(~static_cast<uint64_t>(0)), size_(~static_cast<uint64_t>(0)) {}
+inline BlockHandle::BlockHandle() : offset_(~static_cast<uint64_t>(0)), size_(~static_cast<uint64_t>(0)) {}
 
 }  // namespace leveldb
 

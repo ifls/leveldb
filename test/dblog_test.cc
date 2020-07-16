@@ -4,7 +4,6 @@
 
 #include "db_test.h"
 
-
 #include <iostream>
 #include "db/log_writer.h"
 #include "leveldb/env.h"

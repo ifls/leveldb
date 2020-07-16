@@ -80,388 +80,395 @@ inline static void DBSynchronize(kyotocabinet::TreeDB *db_) {
 
 namespace leveldb {
 
-	// Helper for quickly generating random data.
-	namespace {
-		class RandomGenerator {
-		private:
-			std::string data_;
-			int pos_;
+// Helper for quickly generating random data.
+namespace {
+class RandomGenerator {
+ private:
+  std::string data_;
+  int pos_;
 
-		public:
-			RandomGenerator() {
-				// We use a limited amount of data over and over again and ensure
-				// that it is larger than the compression window (32KB), and also
-				// large enough to serve all typical value sizes we want to write.
-				Random rnd(301);
-				std::string piece;
-				while (data_.size() < 1048576) {
-					// Add a short fragment that is as compressible as specified
-					// by FLAGS_compression_ratio.
-					test::CompressibleString(&rnd, FLAGS_compression_ratio, 100, &piece);
-					data_.append(piece);
-				}
-				pos_ = 0;
-			}
+ public:
+  RandomGenerator() {
+	  // We use a limited amount of data over and over again and ensure
+	  // that it is larger than the compression window (32KB), and also
+	  // large enough to serve all typical value sizes we want to write.
+	  Random rnd(301);
+	  std::string piece;
+	  while (data_.size() < 1048576) {
+		  // Add a short fragment that is as compressible as specified
+		  // by FLAGS_compression_ratio.
+		  test::CompressibleString(&rnd, FLAGS_compression_ratio, 100, &piece);
+		  data_.append(piece);
+	  }
+	  pos_ = 0;
+  }
 
-			Slice Generate(int len) {
-				if (pos_ + len > data_.size()) {
-					pos_ = 0;
-					assert(len < data_.size());
-				}
-				pos_ += len;
-				return Slice(data_.data() + pos_ - len, len);
-			}
-		};
+  Slice Generate(int len) {
+	  if (pos_ + len > data_.size()) {
+		  pos_ = 0;
+		  assert(len < data_.size());
+	  }
+	  pos_ += len;
+	  return Slice(data_.data() + pos_ - len, len);
+  }
+};
 
-		static Slice TrimSpace(Slice s) {
-			int start = 0;
-			while (start < s.size() && isspace(s[start])) {
-				start++;
-			}
-			int limit = s.size();
-			while (limit > start && isspace(s[limit - 1])) {
-				limit--;
-			}
-			return Slice(s.data() + start, limit - start);
-		}
+static Slice TrimSpace(Slice s) {
+	int start = 0;
+	while (start < s.size() && isspace(s[start])) {
+		start++;
+	}
+	int limit = s.size();
+	while (limit > start && isspace(s[limit - 1])) {
+		limit--;
+	}
+	return Slice(s.data() + start, limit - start);
+}
 
-	}  // namespace
+}  // namespace
 
-	class Benchmark {
-	private:
-		kyotocabinet::TreeDB *db_;
-		int db_num_;
-		int num_;
-		int reads_;
-		double start_;
-		double last_op_finish_;
-		int64_t bytes_;
-		std::string message_;
-		Histogram hist_;
-		RandomGenerator gen_;
-		Random rand_;
-		kyotocabinet::LZOCompressor <kyotocabinet::LZO::RAW> comp_;
+class Benchmark {
+ private:
+  kyotocabinet::TreeDB *db_;
+  int db_num_;
+  int num_;
+  int reads_;
+  double start_;
+  double last_op_finish_;
+  int64_t bytes_;
+  std::string message_;
+  Histogram hist_;
+  RandomGenerator gen_;
+  Random rand_;
+  kyotocabinet::LZOCompressor <kyotocabinet::LZO::RAW> comp_;
 
-		// State kept for progress messages
-		int done_;
-		int next_report_;  // When to report next
+  // State kept for progress messages
+  int done_;
+  int next_report_;  // When to report next
 
-		void PrintHeader() {
-			const int kKeySize = 16;
-			PrintEnvironment();
-			std::fprintf(stdout, "Keys:       %d bytes each\n", kKeySize);
-			std::fprintf(stdout, "Values:     %d bytes each (%d bytes after compression)\n", FLAGS_value_size, static_cast<int>(
-					FLAGS_value_size * FLAGS_compression_ratio + 0.5));
-			std::fprintf(stdout, "Entries:    %d\n", num_);
-			std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n", (
-					(static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
-			std::fprintf(stdout, "FileSize:   %.1f MB (estimated)\n", (
-					((kKeySize + FLAGS_value_size * FLAGS_compression_ratio) * num_) / 1048576.0));
-			PrintWarnings();
-			std::fprintf(stdout, "------------------------------------------------\n");
-		}
+  void PrintHeader() {
+	  const int kKeySize = 16;
+	  PrintEnvironment();
+	  std::fprintf(stdout, "Keys:       %d bytes each\n", kKeySize);
+	  std::fprintf(stdout,
+				   "Values:     %d bytes each (%d bytes after compression)\n",
+				   FLAGS_value_size,
+				   static_cast<int>(
+					   FLAGS_value_size * FLAGS_compression_ratio + 0.5));
+	  std::fprintf(stdout, "Entries:    %d\n", num_);
+	  std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n", (
+		  (static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
+	  std::fprintf(stdout, "FileSize:   %.1f MB (estimated)\n", (
+		  ((kKeySize + FLAGS_value_size * FLAGS_compression_ratio) * num_) / 1048576.0));
+	  PrintWarnings();
+	  std::fprintf(stdout, "------------------------------------------------\n");
+  }
 
-		void PrintWarnings() {
+  void PrintWarnings() {
 #if defined(__GNUC__) && !defined(__OPTIMIZE__)
-			std::fprintf(stdout, "WARNING: Optimization is disabled: benchmarks unnecessarily slow\n");
+	  std::fprintf(stdout, "WARNING: Optimization is disabled: benchmarks unnecessarily slow\n");
 #endif
 #ifndef NDEBUG
-			std::fprintf(stdout, "WARNING: Assertions are enabled; benchmarks unnecessarily slow\n");
+	  std::fprintf(stdout, "WARNING: Assertions are enabled; benchmarks unnecessarily slow\n");
 #endif
-		}
+  }
 
-		void PrintEnvironment() {
-			std::fprintf(stderr, "Kyoto Cabinet:    version %s, lib ver %d, lib rev %d\n", kyotocabinet::VERSION, kyotocabinet::LIBVER, kyotocabinet::LIBREV);
+  void PrintEnvironment() {
+	  std::fprintf(stderr,
+				   "Kyoto Cabinet:    version %s, lib ver %d, lib rev %d\n",
+				   kyotocabinet::VERSION,
+				   kyotocabinet::LIBVER,
+				   kyotocabinet::LIBREV);
 
 #if defined(__linux)
-			time_t now = time(nullptr);
-			std::fprintf(stderr, "Date:           %s",
-						 ctime(&now));  // ctime() adds newline
+	  time_t now = time(nullptr);
+	  std::fprintf(stderr, "Date:           %s",
+				   ctime(&now));  // ctime() adds newline
 
-			FILE* cpuinfo = std::fopen("/proc/cpuinfo", "r");
-			if (cpuinfo != nullptr) {
-			  char line[1000];
-			  int num_cpus = 0;
-			  std::string cpu_type;
-			  std::string cache_size;
-			  while (fgets(line, sizeof(line), cpuinfo) != nullptr) {
-				const char* sep = strchr(line, ':');
-				if (sep == nullptr) {
-				  continue;
-				}
-				Slice key = TrimSpace(Slice(line, sep - 1 - line));
-				Slice val = TrimSpace(Slice(sep + 1));
-				if (key == "model name") {
-				  ++num_cpus;
-				  cpu_type = val.ToString();
-				} else if (key == "cache size") {
-				  cache_size = val.ToString();
-				}
-			  }
-			  std::fclose(cpuinfo);
-			  std::fprintf(stderr, "CPU:            %d * %s\n", num_cpus,
-						   cpu_type.c_str());
-			  std::fprintf(stderr, "CPUCache:       %s\n", cache_size.c_str());
-			}
+	  FILE* cpuinfo = std::fopen("/proc/cpuinfo", "r");
+	  if (cpuinfo != nullptr) {
+		char line[1000];
+		int num_cpus = 0;
+		std::string cpu_type;
+		std::string cache_size;
+		while (fgets(line, sizeof(line), cpuinfo) != nullptr) {
+		  const char* sep = strchr(line, ':');
+		  if (sep == nullptr) {
+			continue;
+		  }
+		  Slice key = TrimSpace(Slice(line, sep - 1 - line));
+		  Slice val = TrimSpace(Slice(sep + 1));
+		  if (key == "model name") {
+			++num_cpus;
+			cpu_type = val.ToString();
+		  } else if (key == "cache size") {
+			cache_size = val.ToString();
+		  }
+		}
+		std::fclose(cpuinfo);
+		std::fprintf(stderr, "CPU:            %d * %s\n", num_cpus,
+					 cpu_type.c_str());
+		std::fprintf(stderr, "CPUCache:       %s\n", cache_size.c_str());
+	  }
 #endif
-		}
+  }
 
-		void Start() {
-			start_ = Env::Default()->NowMicros() * 1e-6;
-			bytes_ = 0;
-			message_.clear();
-			last_op_finish_ = start_;
-			hist_.Clear();
-			done_ = 0;
-			next_report_ = 100;
-		}
+  void Start() {
+	  start_ = Env::Default()->NowMicros() * 1e-6;
+	  bytes_ = 0;
+	  message_.clear();
+	  last_op_finish_ = start_;
+	  hist_.Clear();
+	  done_ = 0;
+	  next_report_ = 100;
+  }
 
-		void FinishedSingleOp() {
-			if (FLAGS_histogram) {
-				double now = Env::Default()->NowMicros() * 1e-6;
-				double micros = (now - last_op_finish_) * 1e6;
-				hist_.Add(micros);
-				if (micros > 20000) {
-					std::fprintf(stderr, "long op: %.1f micros%30s\r", micros, "");
-					std::fflush(stderr);
-				}
-				last_op_finish_ = now;
-			}
+  void FinishedSingleOp() {
+	  if (FLAGS_histogram) {
+		  double now = Env::Default()->NowMicros() * 1e-6;
+		  double micros = (now - last_op_finish_) * 1e6;
+		  hist_.Add(micros);
+		  if (micros > 20000) {
+			  std::fprintf(stderr, "long op: %.1f micros%30s\r", micros, "");
+			  std::fflush(stderr);
+		  }
+		  last_op_finish_ = now;
+	  }
 
-			done_++;
-			if (done_ >= next_report_) {
-				if (next_report_ < 1000)
-					next_report_ += 100;
-				else if (next_report_ < 5000)
-					next_report_ += 500;
-				else if (next_report_ < 10000)
-					next_report_ += 1000;
-				else if (next_report_ < 50000)
-					next_report_ += 5000;
-				else if (next_report_ < 100000)
-					next_report_ += 10000;
-				else if (next_report_ < 500000)
-					next_report_ += 50000;
-				else
-					next_report_ += 100000;
-				std::fprintf(stderr, "... finished %d ops%30s\r", done_, "");
-				std::fflush(stderr);
-			}
-		}
+	  done_++;
+	  if (done_ >= next_report_) {
+		  if (next_report_ < 1000)
+			  next_report_ += 100;
+		  else if (next_report_ < 5000)
+			  next_report_ += 500;
+		  else if (next_report_ < 10000)
+			  next_report_ += 1000;
+		  else if (next_report_ < 50000)
+			  next_report_ += 5000;
+		  else if (next_report_ < 100000)
+			  next_report_ += 10000;
+		  else if (next_report_ < 500000)
+			  next_report_ += 50000;
+		  else
+			  next_report_ += 100000;
+		  std::fprintf(stderr, "... finished %d ops%30s\r", done_, "");
+		  std::fflush(stderr);
+	  }
+  }
 
-		void Stop(const Slice &name) {
-			double finish = Env::Default()->NowMicros() * 1e-6;
+  void Stop(const Slice &name) {
+	  double finish = Env::Default()->NowMicros() * 1e-6;
 
-			// Pretend at least one op was done in case we are running a benchmark
-			// that does not call FinishedSingleOp().
-			if (done_ < 1) done_ = 1;
+	  // Pretend at least one op was done in case we are running a benchmark
+	  // that does not call FinishedSingleOp().
+	  if (done_ < 1) done_ = 1;
 
-			if (bytes_ > 0) {
-				char rate[100];
-				std::snprintf(rate, sizeof(rate), "%6.1f MB/s", (bytes_ / 1048576.0) / (finish - start_));
-				if (!message_.empty()) {
-					message_ = std::string(rate) + " " + message_;
-				} else {
-					message_ = rate;
-				}
-			}
+	  if (bytes_ > 0) {
+		  char rate[100];
+		  std::snprintf(rate, sizeof(rate), "%6.1f MB/s", (bytes_ / 1048576.0) / (finish - start_));
+		  if (!message_.empty()) {
+			  message_ = std::string(rate) + " " + message_;
+		  } else {
+			  message_ = rate;
+		  }
+	  }
 
-			std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n", name.ToString().c_str(),
-						 (finish - start_) * 1e6 / done_, (message_.empty() ? "" : " "), message_.c_str());
-			if (FLAGS_histogram) {
-				std::fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
-			}
-			std::fflush(stdout);
-		}
+	  std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n", name.ToString().c_str(),
+				   (finish - start_) * 1e6 / done_, (message_.empty() ? "" : " "), message_.c_str());
+	  if (FLAGS_histogram) {
+		  std::fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
+	  }
+	  std::fflush(stdout);
+  }
 
-	public:
-		enum Order {
-			SEQUENTIAL, RANDOM
-		};
-		enum DBState {
-			FRESH, EXISTING
-		};
+ public:
+  enum Order {
+	SEQUENTIAL, RANDOM
+  };
+  enum DBState {
+	FRESH, EXISTING
+  };
 
-		Benchmark()
-				: db_(nullptr), num_(FLAGS_num), reads_(
-				FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads), bytes_(0), rand_(301) {
-			std::vector<std::string> files;
-			std::string test_dir;
-			Env::Default()->GetTestDirectory(&test_dir);
-			Env::Default()->GetChildren(test_dir.c_str(), &files);
-			if (!FLAGS_use_existing_db) {
-				for (int i = 0; i < files.size(); i++) {
-					if (Slice(files[i]).starts_with("dbbench_polyDB")) {
-						std::string file_name(test_dir);
-						file_name += "/";
-						file_name += files[i];
-						Env::Default()->RemoveFile(file_name.c_str());
-					}
-				}
-			}
-		}
+  Benchmark()
+	  : db_(nullptr), num_(FLAGS_num), reads_(
+	  FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads), bytes_(0), rand_(301) {
+	  std::vector<std::string> files;
+	  std::string test_dir;
+	  Env::Default()->GetTestDirectory(&test_dir);
+	  Env::Default()->GetChildren(test_dir.c_str(), &files);
+	  if (!FLAGS_use_existing_db) {
+		  for (int i = 0; i < files.size(); i++) {
+			  if (Slice(files[i]).starts_with("dbbench_polyDB")) {
+				  std::string file_name(test_dir);
+				  file_name += "/";
+				  file_name += files[i];
+				  Env::Default()->RemoveFile(file_name.c_str());
+			  }
+		  }
+	  }
+  }
 
-		~Benchmark() {
-			if (!db_->close()) {
-				std::fprintf(stderr, "close error: %s\n", db_->error().name());
-			}
-		}
+  ~Benchmark() {
+	  if (!db_->close()) {
+		  std::fprintf(stderr, "close error: %s\n", db_->error().name());
+	  }
+  }
 
-		void Run() {
-			PrintHeader();
-			Open(false);
+  void Run() {
+	  PrintHeader();
+	  Open(false);
 
-			const char *benchmarks = FLAGS_benchmarks;
-			while (benchmarks != nullptr) {
-				const char *sep = strchr(benchmarks, ',');
-				Slice name;
-				if (sep == nullptr) {
-					name = benchmarks;
-					benchmarks = nullptr;
-				} else {
-					name = Slice(benchmarks, sep - benchmarks);
-					benchmarks = sep + 1;
-				}
+	  const char *benchmarks = FLAGS_benchmarks;
+	  while (benchmarks != nullptr) {
+		  const char *sep = strchr(benchmarks, ',');
+		  Slice name;
+		  if (sep == nullptr) {
+			  name = benchmarks;
+			  benchmarks = nullptr;
+		  } else {
+			  name = Slice(benchmarks, sep - benchmarks);
+			  benchmarks = sep + 1;
+		  }
 
-				Start();
+		  Start();
 
-				bool known = true;
-				bool write_sync = false;
-				if (name == Slice("fillseq")) {
-					Write(write_sync, SEQUENTIAL, FRESH, num_, FLAGS_value_size, 1);
-					DBSynchronize(db_);
-				} else if (name == Slice("fillrandom")) {
-					Write(write_sync, RANDOM, FRESH, num_, FLAGS_value_size, 1);
-					DBSynchronize(db_);
-				} else if (name == Slice("overwrite")) {
-					Write(write_sync, RANDOM, EXISTING, num_, FLAGS_value_size, 1);
-					DBSynchronize(db_);
-				} else if (name == Slice("fillrandsync")) {
-					write_sync = true;
-					Write(write_sync, RANDOM, FRESH, num_ / 100, FLAGS_value_size, 1);
-					DBSynchronize(db_);
-				} else if (name == Slice("fillseqsync")) {
-					write_sync = true;
-					Write(write_sync, SEQUENTIAL, FRESH, num_ / 100, FLAGS_value_size, 1);
-					DBSynchronize(db_);
-				} else if (name == Slice("fillrand100K")) {
-					Write(write_sync, RANDOM, FRESH, num_ / 1000, 100 * 1000, 1);
-					DBSynchronize(db_);
-				} else if (name == Slice("fillseq100K")) {
-					Write(write_sync, SEQUENTIAL, FRESH, num_ / 1000, 100 * 1000, 1);
-					DBSynchronize(db_);
-				} else if (name == Slice("readseq")) {
-					ReadSequential();
-				} else if (name == Slice("readrandom")) {
-					ReadRandom();
-				} else if (name == Slice("readrand100K")) {
-					int n = reads_;
-					reads_ /= 1000;
-					ReadRandom();
-					reads_ = n;
-				} else if (name == Slice("readseq100K")) {
-					int n = reads_;
-					reads_ /= 1000;
-					ReadSequential();
-					reads_ = n;
-				} else {
-					known = false;
-					if (name != Slice()) {  // No error message for empty name
-						std::fprintf(stderr, "unknown benchmark '%s'\n", name.ToString().c_str());
-					}
-				}
-				if (known) {
-					Stop(name);
-				}
-			}
-		}
+		  bool known = true;
+		  bool write_sync = false;
+		  if (name == Slice("fillseq")) {
+			  Write(write_sync, SEQUENTIAL, FRESH, num_, FLAGS_value_size, 1);
+			  DBSynchronize(db_);
+		  } else if (name == Slice("fillrandom")) {
+			  Write(write_sync, RANDOM, FRESH, num_, FLAGS_value_size, 1);
+			  DBSynchronize(db_);
+		  } else if (name == Slice("overwrite")) {
+			  Write(write_sync, RANDOM, EXISTING, num_, FLAGS_value_size, 1);
+			  DBSynchronize(db_);
+		  } else if (name == Slice("fillrandsync")) {
+			  write_sync = true;
+			  Write(write_sync, RANDOM, FRESH, num_ / 100, FLAGS_value_size, 1);
+			  DBSynchronize(db_);
+		  } else if (name == Slice("fillseqsync")) {
+			  write_sync = true;
+			  Write(write_sync, SEQUENTIAL, FRESH, num_ / 100, FLAGS_value_size, 1);
+			  DBSynchronize(db_);
+		  } else if (name == Slice("fillrand100K")) {
+			  Write(write_sync, RANDOM, FRESH, num_ / 1000, 100 * 1000, 1);
+			  DBSynchronize(db_);
+		  } else if (name == Slice("fillseq100K")) {
+			  Write(write_sync, SEQUENTIAL, FRESH, num_ / 1000, 100 * 1000, 1);
+			  DBSynchronize(db_);
+		  } else if (name == Slice("readseq")) {
+			  ReadSequential();
+		  } else if (name == Slice("readrandom")) {
+			  ReadRandom();
+		  } else if (name == Slice("readrand100K")) {
+			  int n = reads_;
+			  reads_ /= 1000;
+			  ReadRandom();
+			  reads_ = n;
+		  } else if (name == Slice("readseq100K")) {
+			  int n = reads_;
+			  reads_ /= 1000;
+			  ReadSequential();
+			  reads_ = n;
+		  } else {
+			  known = false;
+			  if (name != Slice()) {  // No error message for empty name
+				  std::fprintf(stderr, "unknown benchmark '%s'\n", name.ToString().c_str());
+			  }
+		  }
+		  if (known) {
+			  Stop(name);
+		  }
+	  }
+  }
 
-	private:
-		void Open(bool sync) {
-			assert(db_ == nullptr);
+ private:
+  void Open(bool sync) {
+	  assert(db_ == nullptr);
 
-			// Initialize db_
-			db_ = new kyotocabinet::TreeDB();
-			char file_name[100];
-			db_num_++;
-			std::string test_dir;
-			Env::Default()->GetTestDirectory(&test_dir);
-			std::snprintf(file_name, sizeof(file_name), "%s/dbbench_polyDB-%d.kct", test_dir.c_str(), db_num_);
+	  // Initialize db_
+	  db_ = new kyotocabinet::TreeDB();
+	  char file_name[100];
+	  db_num_++;
+	  std::string test_dir;
+	  Env::Default()->GetTestDirectory(&test_dir);
+	  std::snprintf(file_name, sizeof(file_name), "%s/dbbench_polyDB-%d.kct", test_dir.c_str(), db_num_);
 
-			// Create tuning options and open the database
-			int open_options = kyotocabinet::PolyDB::OWRITER | kyotocabinet::PolyDB::OCREATE;
-			int tune_options = kyotocabinet::TreeDB::TSMALL | kyotocabinet::TreeDB::TLINEAR;
-			if (FLAGS_compression) {
-				tune_options |= kyotocabinet::TreeDB::TCOMPRESS;
-				db_->tune_compressor(&comp_);
-			}
-			db_->tune_options(tune_options);
-			db_->tune_page_cache(FLAGS_cache_size);
-			db_->tune_page(FLAGS_page_size);
-			db_->tune_map(256LL << 20);
-			if (sync) {
-				open_options |= kyotocabinet::PolyDB::OAUTOSYNC;
-			}
-			if (!db_->open(file_name, open_options)) {
-				std::fprintf(stderr, "open error: %s\n", db_->error().name());
-			}
-		}
+	  // Create tuning options and open the database
+	  int open_options = kyotocabinet::PolyDB::OWRITER | kyotocabinet::PolyDB::OCREATE;
+	  int tune_options = kyotocabinet::TreeDB::TSMALL | kyotocabinet::TreeDB::TLINEAR;
+	  if (FLAGS_compression) {
+		  tune_options |= kyotocabinet::TreeDB::TCOMPRESS;
+		  db_->tune_compressor(&comp_);
+	  }
+	  db_->tune_options(tune_options);
+	  db_->tune_page_cache(FLAGS_cache_size);
+	  db_->tune_page(FLAGS_page_size);
+	  db_->tune_map(256LL << 20);
+	  if (sync) {
+		  open_options |= kyotocabinet::PolyDB::OAUTOSYNC;
+	  }
+	  if (!db_->open(file_name, open_options)) {
+		  std::fprintf(stderr, "open error: %s\n", db_->error().name());
+	  }
+  }
 
-		void Write(bool sync, Order order, DBState state, int num_entries, int value_size, int entries_per_batch) {
-			// Create new database if state == FRESH
-			if (state == FRESH) {
-				if (FLAGS_use_existing_db) {
-					message_ = "skipping (--use_existing_db is true)";
-					return;
-				}
-				delete db_;
-				db_ = nullptr;
-				Open(sync);
-				Start();  // Do not count time taken to destroy/open
-			}
+  void Write(bool sync, Order order, DBState state, int num_entries, int value_size, int entries_per_batch) {
+	  // Create new database if state == FRESH
+	  if (state == FRESH) {
+		  if (FLAGS_use_existing_db) {
+			  message_ = "skipping (--use_existing_db is true)";
+			  return;
+		  }
+		  delete db_;
+		  db_ = nullptr;
+		  Open(sync);
+		  Start();  // Do not count time taken to destroy/open
+	  }
 
-			if (num_entries != num_) {
-				char msg[100];
-				std::snprintf(msg, sizeof(msg), "(%d ops)", num_entries);
-				message_ = msg;
-			}
+	  if (num_entries != num_) {
+		  char msg[100];
+		  std::snprintf(msg, sizeof(msg), "(%d ops)", num_entries);
+		  message_ = msg;
+	  }
 
-			// Write to database
-			for (int i = 0; i < num_entries; i++) {
-				const int k = (order == SEQUENTIAL) ? i : (rand_.Next() % num_entries);
-				char key[100];
-				std::snprintf(key, sizeof(key), "%016d", k);
-				bytes_ += value_size + strlen(key);
-				std::string cpp_key = key;
-				if (!db_->set(cpp_key, gen_.Generate(value_size).ToString())) {
-					std::fprintf(stderr, "set error: %s\n", db_->error().name());
-				}
-				FinishedSingleOp();
-			}
-		}
+	  // Write to database
+	  for (int i = 0; i < num_entries; i++) {
+		  const int k = (order == SEQUENTIAL) ? i : (rand_.Next() % num_entries);
+		  char key[100];
+		  std::snprintf(key, sizeof(key), "%016d", k);
+		  bytes_ += value_size + strlen(key);
+		  std::string cpp_key = key;
+		  if (!db_->set(cpp_key, gen_.Generate(value_size).ToString())) {
+			  std::fprintf(stderr, "set error: %s\n", db_->error().name());
+		  }
+		  FinishedSingleOp();
+	  }
+  }
 
-		void ReadSequential() {
-			kyotocabinet::DB::Cursor *cur = db_->cursor();
-			cur->jump();
-			std::string ckey, cvalue;
-			while (cur->get(&ckey, &cvalue, true)) {
-				bytes_ += ckey.size() + cvalue.size();
-				FinishedSingleOp();
-			}
-			delete cur;
-		}
+  void ReadSequential() {
+	  kyotocabinet::DB::Cursor *cur = db_->cursor();
+	  cur->jump();
+	  std::string ckey, cvalue;
+	  while (cur->get(&ckey, &cvalue, true)) {
+		  bytes_ += ckey.size() + cvalue.size();
+		  FinishedSingleOp();
+	  }
+	  delete cur;
+  }
 
-		void ReadRandom() {
-			std::string value;
-			for (int i = 0; i < reads_; i++) {
-				char key[100];
-				const int k = rand_.Next() % reads_;
-				std::snprintf(key, sizeof(key), "%016d", k);
-				db_->get(key, &value);
-				FinishedSingleOp();
-			}
-		}
-	};
+  void ReadRandom() {
+	  std::string value;
+	  for (int i = 0; i < reads_; i++) {
+		  char key[100];
+		  const int k = rand_.Next() % reads_;
+		  std::snprintf(key, sizeof(key), "%016d", k);
+		  db_->get(key, &value);
+		  FinishedSingleOp();
+	  }
+  }
+};
 
 }  // namespace leveldb
 
