@@ -221,7 +221,7 @@ namespace leveldb {
 
 		ManualCompaction *manual_compaction_ GUARDED_BY(mutex_);
 
-		VersionSet *const versions_ GUARDED_BY(mutex_);  //版本集
+		VersionSet *const versions_ GUARDED_BY(mutex_);  //版本 集合
 
 		// Have we encountered a background error in paranoid mode?
 		Status bg_error_ GUARDED_BY(mutex_);

@@ -77,8 +77,7 @@ namespace leveldb {
         // NotFound status when the file does not exist.
         //
         // The returned file will only be accessed by one thread at a time.
-        virtual Status NewSequentialFile(const std::string &fname,
-                                         SequentialFile **result) = 0;
+        virtual Status NewSequentialFile(const std::string &fname, SequentialFile **result) = 0;
 
         // Create an object supporting random-access reads from the file with the
         // specified name.  On success, stores a pointer to the new file in
@@ -121,8 +120,7 @@ namespace leveldb {
         // Store in *result the names of the children of the specified directory.
         // The names are relative to "dir".
         // Original contents of *results are dropped.
-        virtual Status GetChildren(const std::string &dir,
-                                   std::vector<std::string> *result) = 0;
+        virtual Status GetChildren(const std::string &dir, std::vector<std::string> *result) = 0;
 
         // Delete the named file.
         //

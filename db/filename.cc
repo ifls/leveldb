@@ -125,10 +125,12 @@ namespace leveldb {
         Slice contents = manifest;
         assert(contents.starts_with(dbname + "/"));
         contents.remove_prefix(dbname.size() + 1);
-        std::string tmp = TempFileName(dbname, descriptor_number);
-        Status s = WriteStringToFileSync(env, contents.ToString() + "\n", tmp);
+
+        std::string tmp = TempFileName(dbname, descriptor_number); // current 文件是临时文件
+
+        Status s = WriteStringToFileSync(env, contents.ToString() + "\n", tmp); // 写 manifest 文件名 到 current文件
         if (s.ok()) {
-            s = env->RenameFile(tmp, CurrentFileName(dbname));
+            s = env->RenameFile(tmp, CurrentFileName(dbname)); // 重命名为current文件
         }
         if (!s.ok()) {
             env->RemoveFile(tmp);

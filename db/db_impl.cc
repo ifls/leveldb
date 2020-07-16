@@ -184,28 +184,31 @@ namespace leveldb {
         VersionEdit new_db;
         new_db.SetComparatorName(user_comparator()->Name());
         new_db.SetLogNumber(0);
-        new_db.SetNextFile(2);
+        new_db.SetNextFile(2); // manifest 文件 占用了序号1, 后面从2开始
         new_db.SetLastSequence(0);
 
-        const std::string manifest = DescriptorFileName(dbname_, 1);
+        const std::string manifest = DescriptorFileName(dbname_, 1);  // manifest 文件名
         WritableFile *file;
-        Status s = env_->NewWritableFile(manifest, &file);
+        Status s = env_->NewWritableFile(manifest, &file);  // 创建manifest文件
         if (!s.ok()) {
             return s;
         }
+
         {
             log::Writer log(file);
             std::string record;
-            new_db.EncodeTo(&record);
-            s = log.AddRecord(record);
+
+            new_db.EncodeTo(&record); // version edit 转换为 日志
+            s = log.AddRecord(record);  // 写入到manifest 日志文件
             if (s.ok()) {
-                s = file->Close();
+                s = file->Close();  // 为什么要直接关闭?
             }
         }
         delete file;
+
         if (s.ok()) {
             // Make "CURRENT" file that points to the new manifest file.
-            s = SetCurrentFile(env_, dbname_, 1);
+            s = SetCurrentFile(env_, dbname_, 1);  // 记录当前manifest文件的序号
         } else {
             env_->RemoveFile(manifest);
         }
@@ -221,6 +224,7 @@ namespace leveldb {
         }
     }
 
+    // 删除不需要的文件
     void DBImpl::RemoveObsoleteFiles() {
         mutex_.AssertHeld();
 
@@ -238,14 +242,16 @@ namespace leveldb {
         env_->GetChildren(dbname_, &filenames);  // Ignoring errors on purpose
         uint64_t number;
         FileType type;
+
         std::vector<std::string> files_to_delete;
+
         for (std::string &filename : filenames) {
+            // 读出 number 和 type
             if (ParseFileName(filename, &number, &type)) {
                 bool keep = true;
                 switch (type) {
-                    case kLogFile:
-                        keep = ((number >= versions_->LogNumber()) ||
-                                (number == versions_->PrevLogNumber()));
+                    case kLogFile:  // >= prev log number 就保留
+                        keep = ((number >= versions_->LogNumber()) || (number == versions_->PrevLogNumber()));
                         break;
                     case kDescriptorFile:
                         // Keep my manifest file, and any newer incarnations'
@@ -253,14 +259,14 @@ namespace leveldb {
                         keep = (number >= versions_->ManifestFileNumber());
                         break;
                     case kTableFile:
-                        keep = (live.find(number) != live.end());
+                        keep = (live.find(number) != live.end());  // 还在被当前的version使用
                         break;
                     case kTempFile:
                         // Any temp files that are currently being written to must
                         // be recorded in pending_outputs_, which is inserted into "live"
                         keep = (live.find(number) != live.end());
                         break;
-                    case kCurrentFile:
+                    case kCurrentFile: // current 和 lock文件要删除
                     case kDBLockFile:
                     case kInfoLogFile:
                         keep = true;
@@ -270,7 +276,7 @@ namespace leveldb {
                 if (!keep) {
                     files_to_delete.push_back(std::move(filename));
                     if (type == kTableFile) {
-                        table_cache_->Evict(number);
+                        table_cache_->Evict(number);  //移除sst文件, 清缓存
                     }
                     Log(options_.info_log, "Delete type=%d #%lld\n", static_cast<int>(type),
                         static_cast<unsigned long long>(number));
@@ -283,6 +289,7 @@ namespace leveldb {
         // are therefore safe to delete while allowing other threads to proceed.
         mutex_.Unlock();
         for (const std::string &filename : files_to_delete) {
+            // 删除文件
             env_->RemoveFile(dbname_ + "/" + filename);
         }
         mutex_.Lock();
@@ -295,29 +302,31 @@ namespace leveldb {
         // committed only when the descriptor is created, and this directory
         // may already exist from a previous failed creation attempt.
         env_->CreateDir(dbname_);
+
         assert(db_lock_ == nullptr);
-        Status s = env_->LockFile(LockFileName(dbname_), &db_lock_);
+
+        Status s = env_->LockFile(LockFileName(dbname_), &db_lock_); // 文件锁 上锁
         if (!s.ok()) {
             return s;
         }
 
         if (!env_->FileExists(CurrentFileName(dbname_))) {
+            // 没有current文件, 表示没数据库?
             if (options_.create_if_missing) {
                 s = NewDB();
                 if (!s.ok()) {
                     return s;
                 }
             } else {
-                return Status::InvalidArgument(
-                        dbname_, "does not exist (create_if_missing is false)");
+                return Status::InvalidArgument(dbname_, "does not exist (create_if_missing is false)");
             }
         } else {
             if (options_.error_if_exists) {
-                return Status::InvalidArgument(dbname_,
-                                               "exists (error_if_exists is true)");
+                return Status::InvalidArgument(dbname_, "exists (error_if_exists is true)");
             }
         }
 
+        // 恢复 sst元数据
         s = versions_->Recover(save_manifest);
         if (!s.ok()) {
             return s;
@@ -342,7 +351,7 @@ namespace leveldb {
         versions_->AddLiveFiles(&expected);
         uint64_t number;
         FileType type;
-        std::vector<uint64_t> logs;
+        std::vector<uint64_t> logs;  // 收集需要恢复的数据日志文件 序号
         for (size_t i = 0; i < filenames.size(); i++) {
             if (ParseFileName(filenames[i], &number, &type)) {
                 expected.erase(number);
@@ -360,8 +369,8 @@ namespace leveldb {
         // Recover in the order in which the logs were generated
         std::sort(logs.begin(), logs.end());
         for (size_t i = 0; i < logs.size(); i++) {
-            s = RecoverLogFile(logs[i], (i == logs.size() - 1), save_manifest, edit,
-                               &max_sequence);
+            // 从log文件 恢复 memtable
+            s = RecoverLogFile(logs[i], (i == logs.size() - 1), save_manifest, edit, &max_sequence);
             if (!s.ok()) {
                 return s;
             }
@@ -369,11 +378,11 @@ namespace leveldb {
             // The previous incarnation may not have written any MANIFEST
             // records after allocating this log number.  So we manually
             // update the file number allocation counter in VersionSet.
-            versions_->MarkFileNumberUsed(logs[i]);
+            versions_->MarkFileNumberUsed(logs[i]);  // 更新最大文件序号
         }
 
         if (versions_->LastSequence() < max_sequence) {
-            versions_->SetLastSequence(max_sequence);
+            versions_->SetLastSequence(max_sequence);  // 更新 最大 修改序号
         }
 
         return Status::OK();
@@ -1529,36 +1538,44 @@ namespace leveldb {
     Status DB::Open(const Options &options, const std::string &dbname, DB **dbptr) {
         *dbptr = nullptr;
 
+        // 创建 db 实例
         DBImpl *impl = new DBImpl(options, dbname);
         impl->mutex_.Lock();
         VersionEdit edit;
         // Recover handles create_if_missing, error_if_exists
         bool save_manifest = false;
+        // 恢复数据, 建立元数据
         Status s = impl->Recover(&edit, &save_manifest);
-        if (s.ok() && impl->mem_ == nullptr) {
+
+        if (s.ok() && impl->mem_ == nullptr) {  //新建log文件和 memtable
             // Create new log and a corresponding memtable.
             uint64_t new_log_number = impl->versions_->NewFileNumber();
             WritableFile *lfile;
-            s = options.env->NewWritableFile(LogFileName(dbname, new_log_number),
-                                             &lfile);
+            s = options.env->NewWritableFile(LogFileName(dbname, new_log_number), &lfile);
+
             if (s.ok()) {
                 edit.SetLogNumber(new_log_number);
                 impl->logfile_ = lfile;
                 impl->logfile_number_ = new_log_number;
-                impl->log_ = new log::Writer(lfile);
+                impl->log_ = new log::Writer(lfile);  // 新的日志器
+                //创建新的内存表
                 impl->mem_ = new MemTable(impl->internal_comparator_);
                 impl->mem_->Ref();
             }
         }
+
         if (s.ok() && save_manifest) {
             edit.SetPrevLogNumber(0);  // No older logs needed after recovery.
             edit.SetLogNumber(impl->logfile_number_);
+            // 应用 修改 保存到 manifest文件
             s = impl->versions_->LogAndApply(&edit, &impl->mutex_);
         }
+
         if (s.ok()) {
-            impl->RemoveObsoleteFiles();
-            impl->MaybeScheduleCompaction();
+            impl->RemoveObsoleteFiles();  // 删除过期文件
+            impl->MaybeScheduleCompaction(); // 开后台的compact
         }
+
         impl->mutex_.Unlock();
         if (s.ok()) {
             assert(impl->mem_ != nullptr);

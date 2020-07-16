@@ -170,10 +170,10 @@ namespace leveldb {
         int compaction_level_;
     };
 
-// 版本集和
+    // 版本 集合
     class VersionSet {
     public:
-        //允许这一个构造函数
+        //只有这一个构造函数
         VersionSet(const std::string &dbname, const Options *options, TableCache *table_cache,
                    const InternalKeyComparator *);
 
@@ -323,7 +323,7 @@ namespace leveldb {
 
         // Per-level key at which the next compaction at that level should start.
         // Either an empty string, or a valid InternalKey.
-        std::string compact_pointer_[config::kNumLevels];
+        std::string compact_pointer_[config::kNumLevels]; //
     };
 
 // A Compaction encapsulates information封装信息 about a compaction.

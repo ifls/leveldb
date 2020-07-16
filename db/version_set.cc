@@ -612,7 +612,7 @@ namespace leveldb {
         };
 
         VersionSet *vset_;
-        Version *base_;
+        Version *base_;   //基版
         LevelState levels_[config::kNumLevels];  // 每一层的新增和删除文件
 
     public:
@@ -648,13 +648,12 @@ namespace leveldb {
         }
 
         // Apply all of the edits in *edit to the current state.
-        // 应用修改，记录 到level_数组中
-        void Apply(VersionEdit *edit) {
+        // 应用sst文件修改，记录 到level_数组中
+        void Apply(VersionEdit *edit) {  //class Builder
             // Update compaction pointers
             for (size_t i = 0; i < edit->compact_pointers_.size(); i++) {
-                const int level = edit->compact_pointers_[i].first;
-                vset_->compact_pointer_[level] =
-                        edit->compact_pointers_[i].second.Encode().ToString();
+                const int level = edit->compact_pointers_[i].first; //key
+                vset_->compact_pointer_[level] = edit->compact_pointers_[i].second.Encode().ToString();
             }
 
             // Delete files
@@ -693,7 +692,7 @@ namespace leveldb {
 
         // Save the current state in *v.
         // 生成新的version
-        void SaveTo(Version *v) {
+        void SaveTo(Version *v) {  //class Builder
             BySmallestKey cmp;
             cmp.internal_comparator = &vset_->icmp_;
             for (int level = 0; level < config::kNumLevels; level++) {
@@ -702,12 +701,14 @@ namespace leveldb {
                 const std::vector<FileMetaData *> &base_files = base_->files_[level];
                 std::vector<FileMetaData *>::const_iterator base_iter = base_files.begin();
                 std::vector<FileMetaData *>::const_iterator base_end = base_files.end();
+
                 const FileSet *added_files = levels_[level].added_files;
-                v->files_[level].reserve(base_files.size() + added_files->size());
+
+                v->files_[level].reserve(base_files.size() + added_files->size()); // 预留内存
                 for (const auto &added_file : *added_files) {
                     // Add all smaller files listed in base_
-                    for (std::vector<FileMetaData *>::const_iterator bpos =
-                            std::upper_bound(base_iter, base_end, added_file, cmp);
+                    for (std::vector<FileMetaData *>::const_iterator bpos = std::upper_bound(base_iter, base_end,
+                                                                                             added_file, cmp);
                          base_iter != bpos; ++base_iter) {
                         MaybeAddFile(v, level, *base_iter);
                     }
@@ -799,7 +800,7 @@ namespace leveldb {
         v->next_->prev_ = v;
     }
 
-// 添加日志，应用 version edit 并生成新version 加入到 version set
+    // 添加日志，应用 version edit 并生成新version 加入到 version set
     Status VersionSet::LogAndApply(VersionEdit *edit, port::Mutex *mu) {
         if (edit->has_log_number_) {
             assert(edit->log_number_ >= log_number_);
@@ -818,8 +819,8 @@ namespace leveldb {
         Version *v = new Version(this);   // 新建version
         {
             Builder builder(this, current_);
-            builder.Apply(edit);  //version + edit
-            builder.SaveTo(v);   // version = new_version
+            builder.Apply(edit);  //version + edit 保存edit信息
+            builder.SaveTo(v);   // 算出新的version new_version =
         }
         // 计算下一次 major compact 要处理的层
         Finalize(v);
@@ -849,10 +850,10 @@ namespace leveldb {
             if (s.ok()) {
                 std::string record;
                 edit->EncodeTo(&record);
-                //追加日志到manifest 日志
+                //追加日志到manifest日志文件
                 s = descriptor_log_->AddRecord(record);
                 if (s.ok()) {
-                    //必同步到磁盘
+                    //对manifest文件的修改 必同步到磁盘
                     s = descriptor_file_->Sync();
                 }
                 if (!s.ok()) {
@@ -898,23 +899,24 @@ namespace leveldb {
         };
 
         // Read "CURRENT" file, which contains a pointer to the current manifest file
+        // 拿出当前的manifest文件名
         std::string current;
         Status s = ReadFileToString(env_, CurrentFileName(dbname_), &current);
         if (!s.ok()) {
             return s;
         }
+
         if (current.empty() || current[current.size() - 1] != '\n') {
             return Status::Corruption("CURRENT file does not end with newline");
         }
-        current.resize(current.size() - 1);
+        current.resize(current.size() - 1);  // 去掉 '\n'
 
         std::string dscname = dbname_ + "/" + current;
         SequentialFile *file;
-        s = env_->NewSequentialFile(dscname, &file);
+        s = env_->NewSequentialFile(dscname, &file); // 打开当前的manifest文件
         if (!s.ok()) {
             if (s.IsNotFound()) {
-                return Status::Corruption("CURRENT points to a non-existent file",
-                                          s.ToString());
+                return Status::Corruption("CURRENT points to a non-existent file", s.ToString());
             }
             return s;
         }
@@ -923,28 +925,28 @@ namespace leveldb {
         bool have_prev_log_number = false;
         bool have_next_file = false;
         bool have_last_sequence = false;
+
         uint64_t next_file = 0;
         uint64_t last_sequence = 0;
         uint64_t log_number = 0;
         uint64_t prev_log_number = 0;
-        Builder builder(this, current_);
+
+        Builder builder(this, current_);  // current_ 是当前版本
 
         {
             LogReporter reporter;
             reporter.status = &s;
-            log::Reader reader(file, &reporter, true /*checksum*/,
-                               0 /*initial_offset*/);
+            // 读 manifest
+            log::Reader reader(file, &reporter, true /*checksum*/, 0 /*initial_offset*/);
             Slice record;
             std::string scratch;
-            while (reader.ReadRecord(&record, &scratch) && s.ok()) {
+            while (reader.ReadRecord(&record, &scratch) && s.ok()) {  // 一条一条读出versionEdit
                 VersionEdit edit;
                 s = edit.DecodeFrom(record);
                 if (s.ok()) {
-                    if (edit.has_comparator_ &&
-                        edit.comparator_ != icmp_.user_comparator()->Name()) {
-                        s = Status::InvalidArgument(
-                                edit.comparator_ + " does not match existing comparator ",
-                                icmp_.user_comparator()->Name());
+                    if (edit.has_comparator_ && edit.comparator_ != icmp_.user_comparator()->Name()) {
+                        s = Status::InvalidArgument(edit.comparator_ + " does not match existing comparator ",
+                                                    icmp_.user_comparator()->Name());
                     }
                 }
 
@@ -995,10 +997,12 @@ namespace leveldb {
 
         if (s.ok()) {
             Version *v = new Version(this);
-            builder.SaveTo(v);
+            builder.SaveTo(v);  // 上面多次apply, 得到最终的version
             // Install recovered version
             Finalize(v);
-            AppendVersion(v);
+
+            AppendVersion(v); // 加入version链表里
+
             manifest_file_number_ = next_file;
             next_file_number_ = next_file + 1;
             last_sequence_ = last_sequence;
@@ -1016,6 +1020,7 @@ namespace leveldb {
         return s;
     }
 
+    // 返回是否重用旧的 manifest文件,而不是每次启动都生成新的, 提高启动效率
     bool VersionSet::ReuseManifest(const std::string &dscname,
                                    const std::string &dscbase) {
         if (!options_->reuse_logs) {
@@ -1024,6 +1029,8 @@ namespace leveldb {
         FileType manifest_type;
         uint64_t manifest_number;
         uint64_t manifest_size;
+
+        // 旧的文件太大不重用
         if (!ParseFileName(dscbase, &manifest_number, &manifest_type) ||
             manifest_type != kDescriptorFile ||
             !env_->GetFileSize(dscname, &manifest_size).ok() ||
@@ -1053,6 +1060,7 @@ namespace leveldb {
         }
     }
 
+    // 计算 compact_level 和 compact_score
     void VersionSet::Finalize(Version *v) {
         // Precomputed best level for next compaction
         int best_level = -1;
@@ -1060,7 +1068,7 @@ namespace leveldb {
 
         for (int level = 0; level < config::kNumLevels - 1; level++) {
             double score;
-            if (level == 0) {
+            if (level == 0) {  // 0层特殊处理
                 // We treat level-0 specially by bounding the number of files
                 // instead of number of bytes for two reasons:
                 //
@@ -1072,13 +1080,11 @@ namespace leveldb {
                 // file size is small (perhaps because of a small write-buffer
                 // setting, or very high compression ratios, or lots of
                 // overwrites/deletions).
-                score = v->files_[level].size() /
-                        static_cast<double>(config::kL0_CompactionTrigger);
+                score = v->files_[level].size() / static_cast<double>(config::kL0_CompactionTrigger);
             } else {
                 // Compute the ratio of current size to size limit.
                 const uint64_t level_bytes = TotalFileSize(v->files_[level]);
-                score =
-                        static_cast<double>(level_bytes) / MaxBytesForLevel(options_, level);
+                score = static_cast<double>(level_bytes) / MaxBytesForLevel(options_, level);
             }
 
             if (score > best_score) {
@@ -1091,6 +1097,7 @@ namespace leveldb {
         v->compaction_score_ = best_score;
     }
 
+    // 将当前的修改, 记录一次日志
     Status VersionSet::WriteSnapshot(log::Writer *log) {
         // TODO: Break up into multiple records to reduce memory usage on recovery?
 
@@ -1117,7 +1124,7 @@ namespace leveldb {
         }
 
         std::string record;
-        edit.EncodeTo(&record);
+        edit.EncodeTo(&record);  //
         return log->AddRecord(record);
     }
 
@@ -1172,12 +1179,11 @@ namespace leveldb {
     }
 
     void VersionSet::AddLiveFiles(std::set<uint64_t> *live) {
-        for (Version *v = dummy_versions_.next_; v != &dummy_versions_;
-             v = v->next_) {
-            for (int level = 0; level < config::kNumLevels; level++) {
+        for (Version *v = dummy_versions_.next_; v != &dummy_versions_; v = v->next_) {  //所有版本
+            for (int level = 0; level < config::kNumLevels; level++) {  //所有level
                 const std::vector<FileMetaData *> &files = v->files_[level];
-                for (size_t i = 0; i < files.size(); i++) {
-                    live->insert(files[i]->number);
+                for (size_t i = 0; i < files.size(); i++) {  // 每层所有文件
+                    live->insert(files[i]->number);  //保存 文件 number
                 }
             }
         }
