@@ -161,8 +161,8 @@ to do 100K file opens in directories with varying number of files:
 文件分在多个目录，以提高性能
 So maybe even the sharding is not necessary on modern filesystems?
 
-## Recovery
-
+## Recovery 
+数据恢复流程
 * Read CURRENT to find name of the latest committed MANIFEST
 * Read the named MANIFEST file
 * Clean up stale files

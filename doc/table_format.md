@@ -2,25 +2,25 @@ leveldb File format
 ===================
 
     <beginning_of_file>
-    [data block 1]
+    [data block 1]   == data block
     [data block 2]
     ...
     [data block N]
-    [meta block 1]
+    [meta block 1]    == meta block
     ...
     [meta block K]
-    [metaindex block]  -> mete block
+    [metaindex block]  -> meta block
     [index block]  -> data block
     [Footer]        (fixed size; 定长 starts at file_size - sizeof(Footer))
     <end_of_file>
 
-The file contains internal pointers.  Each such pointer is called
+The file contains internal pointers内部指针, 内部偏移.  Each such pointer is called
 a BlockHandle and contains the following information:
 
     offset:   varint64
     size:     varint64
-
-See [varints](https://developers.google.com/protocol-buffers/docs/encoding#varints)
+protobuf 数据交换格式 定义 varint64
+See [varints] TODO (https://developers.google.com/protocol-buffers/docs/encoding#varints)
 for an explanation of varint64 format.
 
 1.  The sequence of key/value pairs in the file are stored in sorted order and partitioned into a sequence of data blocks.  
@@ -89,12 +89,13 @@ The filter block is formatted as follows:
 The offset array at the end of the filter block allows efficient
 mapping from a data block offset to the corresponding filter.
 
-## "stats" Meta Block
+## "stats" Meta Block 统计元数据块
+ 
+This meta block contains a bunch of stats.  
+The key is the name of the statistic.  The value contains the statistic.
+// kv 形式
 
-This meta block contains a bunch of stats.  The key is the name
-of the statistic.  The value contains the statistic.
-
-TODO(postrelease): record following stats.
+TODO(postrelease交付后，添加此特性): record following stats.
 
     data size
     index size

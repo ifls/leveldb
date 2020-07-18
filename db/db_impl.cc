@@ -1284,7 +1284,7 @@ Status DBImpl::Write(const WriteOptions &options, WriteBatch *updates) {
 			if (sync_error) {
 				// The state of the log file is indeterminate不确定状态，尚未持久化:
 				// the log record we just added may or may not show up when the DB is re-opened. 不确定重启的时候是前进还是后退
-				// So we force the DB into a mode where all future writes fail 让之后的写入都失败.  //为什么这样做
+				// So we force the DB into a mode where all future writes fail 让之后的写入都失败.  //为什么这样做？
 				RecordBackgroundError(status);
 			}
 		}

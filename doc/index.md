@@ -452,19 +452,21 @@ filter but uses some other mechanism for summarizing a set of keys. See
 ## Checksums
 
 leveldb associates checksums with all data it stores in the file system. There
-are two separate controls provided over how aggressively these checksums are
+are two separate controls provided over how aggressively激进地 these checksums are
 verified:
 
 `ReadOptions::verify_checksums` may be set to true to force checksum
-verification of all data that is read from the file system on behalf of a
-particular read.  By default, no such verification is done.
+verification of all data that is read from the file system on behalf of代表？ a
+particular read.  
+By default, no such verification is done. 默认不开校验
 
-`Options::paranoid_checks` may be set to true before opening a database to make
-the database implementation raise an error as soon as it detects an internal
-corruption. Depending on which portion of the database has been corrupted, the
+`Options::paranoid_checks` may be set to true before opening a database 
+to make the database implementation raise an error as soon as it detects an internal corruption. 
+如果检测到数据破坏，尽快报错
+Depending on which portion部分 of the database has been corrupted, the
 error may be raised when the database is opened, or later by another database
-operation. By default, paranoid checking is off so that the database can be used
-even if parts of its persistent storage have been corrupted.
+operation. By default, paranoid偏执 checking is off so that the database can be used
+even if parts of its persistent storage have been corrupted. 腐坏，堕落
 
 If a database is corrupted (perhaps it cannot be opened when paranoid checking
 is turned on), the `leveldb::RepairDB` function may be used to recover as much
@@ -488,11 +490,11 @@ file system space used by the key range `[a..c)` and `sizes[1]` to the
 approximate number of bytes used by the key range `[x..z)`.
 
 ## Environment
-
+文件操作和系统调用都是通过Env对象包装
 All file operations (and other operating system calls) issued by the leveldb
-implementation are routed through a `leveldb::Env` object. Sophisticated clients
-may wish to provide their own Env implementation to get better control.
-For example, an application may introduce artificial delays in the file IO
+implementation are routed through a `leveldb::Env` object.  leveldb 不负责网络编程相关
+Sophisticated复杂的 clients may wish to provide their own Env implementation to get better control.
+For example, an application may introduce artificial delays伪造时延 in the file IO
 paths to limit the impact of leveldb on other activities in the system.
 
 ```c++
@@ -507,13 +509,13 @@ Status s = leveldb::DB::Open(options, ...);
 ```
 
 ## Porting
-
+平台特定实现
 leveldb may be ported to a new platform by providing platform specific
 implementations of the types/methods/functions exported by
 `leveldb/port/port.h`.  See `leveldb/port/port_example.h` for more details.
 
-In addition, the new platform may need a new default `leveldb::Env`
-implementation.  See `leveldb/util/env_posix.h` for an example.
+In addition, the new platform may need a new default `leveldb::Env` implementation.  
+See `leveldb/util/env_posix.h` for an example.
 
 ## Other Information
 
