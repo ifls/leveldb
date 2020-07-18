@@ -219,8 +219,7 @@ Status Table::InternalGet(const ReadOptions &options,
 		Slice handle_value = iiter->value();
 		FilterBlockReader *filter = rep_->filter;
 		BlockHandle handle;
-		if (filter != nullptr && handle.DecodeFrom(&handle_value).ok() &&
-			!filter->KeyMayMatch(handle.offset(), k)) {
+		if (filter != nullptr && handle.DecodeFrom(&handle_value).ok() && !filter->KeyMayMatch(handle.offset(), k)) {
 			// Not found
 		} else {
 			// BlockCache 数据块缓存

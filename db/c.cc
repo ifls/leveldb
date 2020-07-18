@@ -279,9 +279,8 @@ void leveldb_compact_range(leveldb_t *db,
 	// db_impl.cc
 	db->rep->CompactRange(
 		// Pass null Slice if corresponding "const char*" is null
-		(start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr), (limit_key
-																			? (b = Slice(limit_key, limit_key_len), &b)
-																			: nullptr));
+		(start_key ? (a = Slice(start_key, start_key_len), &a) : nullptr),
+		(limit_key ? (b = Slice(limit_key, limit_key_len), &b) : nullptr));
 }
 
 void leveldb_destroy_db(const leveldb_options_t *options, const char *name, char **errptr) {
@@ -460,12 +459,11 @@ void leveldb_comparator_destroy(leveldb_comparator_t *cmp) { delete cmp; }
 
 leveldb_filterpolicy_t *leveldb_filterpolicy_create(void *state,
 													void (*destructor)(void *),
-													char *(*create_filter)(
-														void *,
-														const char *const *key_array,
-														const size_t *key_length_array,
-														int num_keys,
-														size_t *filter_length),
+													char *(*create_filter)(void *,
+																		   const char *const *key_array,
+																		   const size_t *key_length_array,
+																		   int num_keys,
+																		   size_t *filter_length),
 													uint8_t (*key_may_match)(void *,
 																			 const char *key,
 																			 size_t length,

@@ -28,9 +28,7 @@ struct TableBuilder::Rep {
 		index_block(&index_block_options),
 		num_entries(0),
 		closed(false),
-		filter_block(
-			opt.filter_policy == nullptr ? nullptr
-										 : new FilterBlockBuilder(opt.filter_policy)),
+		filter_block(opt.filter_policy == nullptr ? nullptr : new FilterBlockBuilder(opt.filter_policy)),
 		pending_index_entry(false) {
 	  index_block_options.block_restart_interval = 1;
   }
@@ -160,8 +158,8 @@ void TableBuilder::WriteBlock(BlockBuilder *block, BlockHandle *handle) {
 
 		case kSnappyCompression: {
 			std::string *compressed = &r->compressed_output;
-			if (port::Snappy_Compress(raw.data(), raw.size(), compressed) &&
-				compressed->size() < raw.size() - (raw.size() / 8u)) {
+			if (port::Snappy_Compress(raw.data(), raw.size(), compressed)
+				&& compressed->size() < raw.size() - (raw.size() / 8u)) {
 				block_contents = *compressed;
 			} else {
 				// Snappy not supported, or compressed less than 12.5%, so just

@@ -298,8 +298,8 @@ class InMemoryEnv : public EnvWrapper {
 	  for (const auto &kvp : file_map_) {
 		  const std::string &filename = kvp.first;
 
-		  if (filename.size() >= dir.size() + 1 && filename[dir.size()] == '/' &&
-			  Slice(filename).starts_with(Slice(dir))) {
+		  if (filename.size() >= dir.size() + 1 && filename[dir.size()] == '/'
+			  && Slice(filename).starts_with(Slice(dir))) {
 			  result->push_back(filename.substr(dir.size() + 1));
 		  }
 	  }

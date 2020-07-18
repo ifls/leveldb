@@ -265,8 +265,12 @@ class Stats {
 	  }
 	  AppendWithSpace(&extra, message_);
 
-	  std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n", name.ToString().c_str(),
-				   seconds_ * 1e6 / done_, (extra.empty() ? "" : " "), extra.c_str());
+	  std::fprintf(stdout,
+				   "%-12s : %11.3f micros/op;%s%s\n",
+				   name.ToString().c_str(),
+				   seconds_ * 1e6 / done_,
+				   (extra.empty() ? "" : " "),
+				   extra.c_str());
 	  if (FLAGS_histogram) {
 		  std::fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
 	  }
@@ -327,10 +331,12 @@ class Benchmark {
 				   static_cast<int>(
 					   FLAGS_value_size * FLAGS_compression_ratio + 0.5));
 	  std::fprintf(stdout, "Entries:    %d\n", num_);
-	  std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n", (
-		  (static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
-	  std::fprintf(stdout, "FileSize:   %.1f MB (estimated)\n", (
-		  ((kKeySize + FLAGS_value_size * FLAGS_compression_ratio) * num_) / 1048576.0));
+	  std::fprintf(stdout,
+				   "RawSize:    %.1f MB (estimated)\n",
+				   ((static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
+	  std::fprintf(stdout,
+				   "FileSize:   %.1f MB (estimated)\n",
+				   (((kKeySize + FLAGS_value_size * FLAGS_compression_ratio) * num_) / 1048576.0));
 	  PrintWarnings();
 	  std::fprintf(stdout, "------------------------------------------------\n");
   }
@@ -390,15 +396,12 @@ class Benchmark {
 
  public:
   Benchmark() : cache_(FLAGS_cache_size >= 0 ? NewLRUCache(FLAGS_cache_size) : nullptr),
-				filter_policy_(
-					FLAGS_bloom_bits >= 0 ? NewBloomFilterPolicy(FLAGS_bloom_bits)
-										  : nullptr),
+				filter_policy_(FLAGS_bloom_bits >= 0 ? NewBloomFilterPolicy(FLAGS_bloom_bits) : nullptr),
 				db_(nullptr),
 				num_(FLAGS_num),
 				value_size_(FLAGS_value_size),
 				entries_per_batch_(1),
-				reads_(
-					FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads),
+				reads_(FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads),
 				heap_counter_(0) {
 	  std::vector<std::string> files;
 	  g_env->GetChildren(FLAGS_db, &files);

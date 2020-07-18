@@ -41,8 +41,11 @@ class FindFileTest : public testing::Test {
 	  InternalKeyComparator cmp(BytewiseComparator());
 	  Slice s(smallest != nullptr ? smallest : "");
 	  Slice l(largest != nullptr ? largest : "");
-	  return SomeFileOverlapsRange(cmp, disjoint_sorted_files_, files_, (smallest != nullptr ? &s : nullptr), (
-		  largest != nullptr ? &l : nullptr));
+	  return SomeFileOverlapsRange(cmp,
+								   disjoint_sorted_files_,
+								   files_,
+								   (smallest != nullptr ? &s : nullptr),
+								   (largest != nullptr ? &l : nullptr));
   }
 
   bool disjoint_sorted_files_;

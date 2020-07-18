@@ -289,8 +289,8 @@ void Version::ForEachOverlapping(Slice user_key,
 	for (uint32_t i = 0; i < files_[0].size(); i++) {
 		FileMetaData *f = files_[0][i];
 		// min <= user_key <= max
-		if (ucmp->Compare(user_key, f->smallest.user_key()) >= 0 &&
-			ucmp->Compare(user_key, f->largest.user_key()) <= 0) {
+		if (ucmp->Compare(user_key, f->smallest.user_key()) >= 0
+			&& ucmp->Compare(user_key, f->largest.user_key()) <= 0) {
 			tmp.push_back(f);
 		}
 	}
@@ -689,8 +689,7 @@ class VersionSet::Builder {
 		  for (const auto &added_file : *added_files) {
 			  // Add all smaller files listed in base_
 			  for (std::vector<FileMetaData *>::const_iterator
-					   bpos = std::upper_bound(base_iter, base_end, added_file, cmp);
-				   base_iter != bpos; ++base_iter) {
+					   bpos = std::upper_bound(base_iter, base_end, added_file, cmp); base_iter != bpos; ++base_iter) {
 				  MaybeAddFile(v, level, *base_iter);
 			  }
 
@@ -927,8 +926,8 @@ Status VersionSet::Recover(bool *save_manifest) {
 			s = edit.DecodeFrom(record);
 			if (s.ok()) {
 				if (edit.has_comparator_ && edit.comparator_ != icmp_.user_comparator()->Name()) {
-					s = Status::InvalidArgument(edit.comparator_ +
-						" does not match existing comparator ", icmp_.user_comparator()->Name());
+					s = Status::InvalidArgument(edit.comparator_ + " does not match existing comparator ",
+												icmp_.user_comparator()->Name());
 				}
 			}
 
@@ -1012,8 +1011,8 @@ bool VersionSet::ReuseManifest(const std::string &dscname, const std::string &ds
 	uint64_t manifest_size;
 
 	// 旧的文件太大不重用
-	if (!ParseFileName(dscbase, &manifest_number, &manifest_type) || manifest_type != kDescriptorFile ||
-		!env_->GetFileSize(dscname, &manifest_size).ok() ||
+	if (!ParseFileName(dscbase, &manifest_number, &manifest_type) || manifest_type != kDescriptorFile
+		|| !env_->GetFileSize(dscname, &manifest_size).ok() ||
 		// Make new compacted MANIFEST if old one is too big
 		manifest_size >= TargetFileSize(options_)) {
 		return false;
@@ -1281,8 +1280,7 @@ Compaction *VersionSet::PickCompaction() {
 		// Pick the first file that comes after compact_pointer_[level]
 		for (size_t i = 0; i < current_->files_[level].size(); i++) {
 			FileMetaData *f = current_->files_[level][i];
-			if (compact_pointer_[level].empty() ||
-				icmp_.Compare(f->largest.Encode(), compact_pointer_[level]) > 0) {
+			if (compact_pointer_[level].empty() || icmp_.Compare(f->largest.Encode(), compact_pointer_[level]) > 0) {
 				c->inputs_[0].push_back(f);
 				break;
 			}
@@ -1347,10 +1345,9 @@ FileMetaData *FindSmallestBoundaryFile(const InternalKeyComparator &icmp,
 	FileMetaData *smallest_boundary_file = nullptr;
 	for (size_t i = 0; i < level_files.size(); ++i) {
 		FileMetaData *f = level_files[i];
-		if (icmp.Compare(f->smallest, largest_key) > 0 &&
-			user_cmp->Compare(f->smallest.user_key(), largest_key.user_key()) == 0) {
-			if (smallest_boundary_file == nullptr ||
-				icmp.Compare(f->smallest, smallest_boundary_file->smallest) < 0) {
+		if (icmp.Compare(f->smallest, largest_key) > 0
+			&& user_cmp->Compare(f->smallest.user_key(), largest_key.user_key()) == 0) {
+			if (smallest_boundary_file == nullptr || icmp.Compare(f->smallest, smallest_boundary_file->smallest) < 0) {
 				smallest_boundary_file = f;
 			}
 		}
@@ -1425,8 +1422,8 @@ void VersionSet::SetupOtherInputs(Compaction *c) {
 		const int64_t inputs1_size = TotalFileSize(c->inputs_[1]);
 		const int64_t expanded0_size = TotalFileSize(expanded0);
 
-		if (expanded0.size() > c->inputs_[0].size() &&
-			inputs1_size + expanded0_size < ExpandedCompactionByteSizeLimit(options_)) {
+		if (expanded0.size() > c->inputs_[0].size()
+			&& inputs1_size + expanded0_size < ExpandedCompactionByteSizeLimit(options_)) {
 			InternalKey new_start, new_limit;
 			// 根据ln 参战文件, 算新的 key范围
 			GetRange(expanded0, &new_start, &new_limit);
@@ -1526,8 +1523,8 @@ bool Compaction::IsTrivialMove() const {
 	// Avoid a move if there is lots of overlapping grandparent data.
 	// Otherwise, the move could create a parent file that will require
 	// a very expensive merge later on.
-	return (num_input_files(0) == 1 && num_input_files(1) == 0 &&
-		TotalFileSize(grandparents_) <= MaxGrandParentOverlapBytes(vset->options_));
+	return (num_input_files(0) == 1 && num_input_files(1) == 0
+		&& TotalFileSize(grandparents_) <= MaxGrandParentOverlapBytes(vset->options_));
 }
 
 void Compaction::AddInputDeletions(VersionEdit *edit) {
@@ -1563,8 +1560,8 @@ bool Compaction::ShouldStopBefore(const Slice &internal_key) {
 	const VersionSet *vset = input_version_->vset_;
 	// Scan to find earliest grandparent file that contains key.
 	const InternalKeyComparator *icmp = &vset->icmp_;
-	while (grandparent_index_ < grandparents_.size() &&
-		icmp->Compare(internal_key, grandparents_[grandparent_index_]->largest.Encode()) > 0) {
+	while (grandparent_index_ < grandparents_.size()
+		&& icmp->Compare(internal_key, grandparents_[grandparent_index_]->largest.Encode()) > 0) {
 		if (seen_key_) {
 			overlapped_bytes_ += grandparents_[grandparent_index_]->file_size;
 		}

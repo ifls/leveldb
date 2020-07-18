@@ -26,8 +26,7 @@ Reader::Reader(SequentialFile *file, Reporter *reporter, bool checksum, uint64_t
 	  last_record_offset_(0),
 	  end_of_buffer_offset_(0),
 	  initial_offset_(initial_offset),
-	  resyncing_(
-		  initial_offset > 0) {}
+	  resyncing_(initial_offset > 0) {}
 
 Reader::~Reader() { delete[] backing_store_; }
 
@@ -78,8 +77,7 @@ bool Reader::ReadRecord(Slice *record, std::string *scratch) {
 		// ReadPhysicalRecord may have only had an empty trailer remaining in its
 		// internal buffer. Calculate the offset of the next physical record now
 		// that it has returned, properly accounting for its header size.
-		uint64_t physical_record_offset =
-			end_of_buffer_offset_ - buffer_.size() - kHeaderSize - fragment.size();
+		uint64_t physical_record_offset = end_of_buffer_offset_ - buffer_.size() - kHeaderSize - fragment.size();
 
 		if (resyncing_) {
 			if (record_type == kMiddleType) {

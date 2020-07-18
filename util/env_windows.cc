@@ -50,14 +50,14 @@ std::string GetWindowsErrorMessage(DWORD error_code) {
 	std::string message;
 	char *error_text = nullptr;
 	// Use MBCS version of FormatMessage to match return value.
-	size_t error_text_size = ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER |
-												  FORMAT_MESSAGE_IGNORE_INSERTS,
-											  nullptr,
-											  error_code,
-											  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-											  reinterpret_cast<char *>(&error_text),
-											  0,
-											  nullptr);
+	size_t error_text_size =
+		::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
+						 nullptr,
+						 error_code,
+						 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+						 reinterpret_cast<char *>(&error_text),
+						 0,
+						 nullptr);
 	if (!error_text) {
 		return message;
 	}
@@ -218,8 +218,8 @@ class WindowsRandomAccessFile : public RandomAccessFile {
 class WindowsMmapReadableFile : public RandomAccessFile {
  public:
   // base[0,length-1] contains the mmapped contents of the file.
-  WindowsMmapReadableFile(std::string filename, char *mmap_base, size_t length, Limiter *mmap_limiter)
-	  : mmap_base_(mmap_base), length_(length), mmap_limiter_(mmap_limiter), filename_(std::move(filename)) {}
+  WindowsMmapReadableFile(std::string filename, char *mmap_base, size_t length, Limiter *mmap_limiter) : mmap_base_(
+	  mmap_base), length_(length), mmap_limiter_(mmap_limiter), filename_(std::move(filename)) {}
 
   ~WindowsMmapReadableFile() override {
 	  ::UnmapViewOfFile(mmap_base_);
@@ -731,8 +731,8 @@ class SingletonEnv {
 	  env_initialized_.store(true, std::memory_order::memory_order_relaxed);
 #endif  // !defined(NDEBUG)
 	  static_assert(sizeof(env_storage_) >= sizeof(EnvType), "env_storage_ will not fit the Env");
-	  static_assert(alignof(decltype(env_storage_)) >=
-		  alignof(EnvType), "env_storage_ does not meet the Env's alignment needs");
+	  static_assert(alignof(decltype(env_storage_)) >= alignof(EnvType),
+					"env_storage_ does not meet the Env's alignment needs");
 	  new(&env_storage_) EnvType();
   }
 

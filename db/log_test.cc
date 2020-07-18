@@ -124,8 +124,7 @@ class LogTest : public testing::Test {
 	  WriteInitialOffsetLog();
 	  reading_ = true;
 	  source_.contents_ = Slice(dest_.contents_);
-	  Reader *offset_reader = new Reader(&source_, &report_, true /*checksum*/,
-										 WrittenBytes() + offset_past_end);
+	  Reader *offset_reader = new Reader(&source_, &report_, true /*checksum*/, WrittenBytes() + offset_past_end);
 	  Slice record;
 	  std::string scratch;
 	  ASSERT_TRUE(!offset_reader->ReadRecord(&record, &scratch));
@@ -236,20 +235,18 @@ size_t LogTest::initial_offset_record_sizes_[] = {10000,  // Two sizable records
 												  10000, 2 * log::kBlockSize - 1000,  // Span three blocks
 												  1,
 												  13716,                          // Consume all but two bytes of block 3.
-												  log::kBlockSize -
-													  kHeaderSize,  // Consume the entirety of block 4.
+												  log::kBlockSize - kHeaderSize,  // Consume the entirety of block 4.
 };
 
-uint64_t LogTest::initial_offset_last_record_offsets_[] = {0, kHeaderSize + 10000, 2 * (kHeaderSize + 10000),
-														   2 * (kHeaderSize + 10000) +
-															   (2 * log::kBlockSize - 1000) + 3 * kHeaderSize,
-														   2 * (kHeaderSize + 10000) +
-															   (2 * log::kBlockSize - 1000) + 3 * kHeaderSize +
-															   kHeaderSize + 1, 3 * log::kBlockSize,};
+uint64_tLogTest::initial_offset_last_record_offsets_[] = {0, kHeaderSize + 10000, 2 * (kHeaderSize + 10000),
+														  2 * (kHeaderSize + 10000) + (2 * log::kBlockSize - 1000)
+															  + 3 * kHeaderSize,
+														  2 * (kHeaderSize + 10000) + (2 * log::kBlockSize - 1000)
+															  + 3 * kHeaderSize + kHeaderSize + 1,
+														  3 * log::kBlockSize,};
 
 // LogTest::initial_offset_last_record_offsets_ must be defined before this.
-int LogTest::num_initial_offset_records_ =
-	sizeof(LogTest::initial_offset_last_record_offsets_) / sizeof(uint64_t);
+int LogTest::num_initial_offset_records_ = sizeof(LogTest::initial_offset_last_record_offsets_) / sizeof(uint64_t);
 
 TEST_F(LogTest, Empty) { ASSERT_EQ("EOF", Read()); }
 

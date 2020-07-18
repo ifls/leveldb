@@ -50,10 +50,8 @@ class Repairer {
 		icmp_(options.comparator),
 		ipolicy_(options.filter_policy),
 		options_(SanitizeOptions(dbname, &icmp_, &ipolicy_, options)),
-		owns_info_log_(
-			options_.info_log != options.info_log),
-		owns_cache_(
-			options_.block_cache != options.block_cache),
+		owns_info_log_(options_.info_log != options.info_log),
+		owns_cache_(options_.block_cache != options.block_cache),
 		next_file_number_(1) {
 	  // TableCache can be small since we expect each table to be opened once.
 	  table_cache_ = new TableCache(dbname_, options_, 10);

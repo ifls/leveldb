@@ -119,8 +119,8 @@ class CorruptionTest : public testing::Test {
 	  std::string fname;
 	  int picked_number = -1;
 	  for (size_t i = 0; i < filenames.size(); i++) {
-		  if (ParseFileName(filenames[i], &number, &type) && type == filetype &&
-			  int(number) > picked_number) {  // Pick latest file
+		  if (ParseFileName(filenames[i], &number, &type) && type == filetype
+			  && int(number) > picked_number) {  // Pick latest file
 			  fname = dbname_ + "/" + filenames[i];
 			  picked_number = number;
 		  }

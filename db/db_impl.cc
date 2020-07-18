@@ -125,10 +125,8 @@ DBImpl::DBImpl(const Options &raw_options, const std::string &dbname)
 	  internal_comparator_(raw_options.comparator),
 	  internal_filter_policy_(raw_options.filter_policy),
 	  options_(SanitizeOptions(dbname, &internal_comparator_, &internal_filter_policy_, raw_options)),
-	  owns_info_log_(
-		  options_.info_log != raw_options.info_log),
-	  owns_cache_(options_.block_cache !=
-		  raw_options.block_cache),
+	  owns_info_log_(options_.info_log != raw_options.info_log),
+	  owns_cache_(options_.block_cache != raw_options.block_cache),
 	  dbname_(dbname),
 	  table_cache_(new TableCache(dbname_, options_, TableCacheSize(options_))),
 	  db_lock_(nullptr),
@@ -395,8 +393,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
 	  void Corruption(size_t bytes, const Status &s) override {
 		  Log(info_log,
 			  "%s%s: dropping %d bytes; %s",
-			  (this->status == nullptr ? "(ignoring error) "
-									   : ""),
+			  (this->status == nullptr ? "(ignoring error) " : ""),
 			  fname,
 			  static_cast<int>(bytes),
 			  s.ToString().c_str());
@@ -450,8 +447,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
 		if (!status.ok()) {
 			break;
 		}
-		const SequenceNumber last_seq =
-			WriteBatchInternal::Sequence(&batch) + WriteBatchInternal::Count(&batch) - 1;
+		const SequenceNumber last_seq = WriteBatchInternal::Sequence(&batch) + WriteBatchInternal::Count(&batch) - 1;
 		if (last_seq > *max_sequence) {
 			*max_sequence = last_seq;
 		}
@@ -735,15 +731,9 @@ void DBImpl::BackgroundCompaction() {
 		Log(options_.info_log,
 			"Manual compaction at level-%d from %s .. %s; will stop at %s\n",
 			m->level,
-			(m->begin
-			 ? m->begin->DebugString().c_str()
-			 : "(begin)"),
-			(m->end
-			 ? m->end->DebugString().c_str()
-			 : "(end)"),
-			(m->done
-			 ? "(end)"
-			 : manual_end.DebugString().c_str()));
+			(m->begin ? m->begin->DebugString().c_str() : "(begin)"),
+			(m->end ? m->end->DebugString().c_str() : "(end)"),
+			(m->done ? "(end)" : manual_end.DebugString().c_str()));
 	} else {
 		// 挑选2个不同层级的sst，合并
 		c = versions_->PickCompaction();
@@ -766,8 +756,7 @@ void DBImpl::BackgroundCompaction() {
 		Log(options_.info_log,
 			"Moved #%lld to level-%d %lld bytes %s: %s\n",
 			static_cast<unsigned long long>(f->number),
-			c->level() +
-				1,
+			c->level() + 1,
 			static_cast<unsigned long long>(f->file_size),
 			status.ToString().c_str(),
 			versions_->LevelSummary(&tmp));
@@ -991,8 +980,8 @@ Status DBImpl::DoCompactionWork(CompactionState *compact) {
 			if (last_sequence_for_key <= compact->smallest_snapshot) {
 				// Hidden by an newer entry for same user key
 				drop = true;  // (A)
-			} else if (ikey.type == kTypeDeletion && ikey.sequence <= compact->smallest_snapshot &&
-				compact->compaction->IsBaseLevelForKey(ikey.user_key)) {
+			} else if (ikey.type == kTypeDeletion && ikey.sequence <= compact->smallest_snapshot
+				&& compact->compaction->IsBaseLevelForKey(ikey.user_key)) {
 				// For this user key:
 				// (1) there is no data in higher levels
 				// (2) data in lower levels will have larger sequence numbers
@@ -1197,9 +1186,12 @@ Iterator *DBImpl::NewIterator(const ReadOptions &options) {
 	SequenceNumber latest_snapshot;
 	uint32_t seed;
 	Iterator *iter = NewInternalIterator(options, &latest_snapshot, &seed);
-	return NewDBIterator(this, user_comparator(), iter, (options.snapshot != nullptr
-														 ? static_cast<const SnapshotImpl *>(options.snapshot)->sequence_number()
-														 : latest_snapshot), seed);
+	return NewDBIterator(this,
+						 user_comparator(),
+						 iter,
+						 (options.snapshot != nullptr
+						  ? static_cast<const SnapshotImpl *>(options.snapshot)->sequence_number() : latest_snapshot),
+						 seed);
 }
 
 void DBImpl::RecordReadSample(Slice key) {
@@ -1478,10 +1470,15 @@ bool DBImpl::GetProperty(const Slice &property, std::string *value) {
 		for (int level = 0; level < config::kNumLevels; level++) {
 			int files = versions_->NumLevelFiles(level);
 			if (stats_[level].micros > 0 || files > 0) {
-				std::snprintf(buf, sizeof(buf), "%3d %8d %8.0f %9.0f %8.0f %9.0f\n", level, files,
+				std::snprintf(buf,
+							  sizeof(buf),
+							  "%3d %8d %8.0f %9.0f %8.0f %9.0f\n",
+							  level,
+							  files,
 							  versions_->NumLevelBytes(level) / 1048576.0,
 							  stats_[level].micros / 1e6,
-							  stats_[level].bytes_read / 1048576.0, stats_[level].bytes_written / 1048576.0);
+							  stats_[level].bytes_read / 1048576.0,
+							  stats_[level].bytes_written / 1048576.0);
 				value->append(buf);
 			}
 		}
@@ -1611,8 +1608,8 @@ Status DestroyDB(const std::string &dbname, const Options &options) {
 		uint64_t number;
 		FileType type;
 		for (size_t i = 0; i < filenames.size(); i++) {
-			if (ParseFileName(filenames[i], &number, &type) &&
-				type != kDBLockFile) {  // 排序锁文件，下面删除Lock file will be deleted at end
+			if (ParseFileName(filenames[i], &number, &type)
+				&& type != kDBLockFile) {  // 排序锁文件，下面删除Lock file will be deleted at end
 				//删除 文件
 				Status del = env->RemoveFile(dbname + "/" + filenames[i]);
 				if (result.ok() && !del.ok()) {

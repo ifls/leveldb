@@ -2149,8 +2149,8 @@ static bool CompareIterators(int step, DB *model, DB *db, const Snapshot *model_
 	Iterator *dbiter = db->NewIterator(options);
 	bool ok = true;
 	int count = 0;
-	for (miter->SeekToFirst(), dbiter->SeekToFirst();
-		 ok && miter->Valid() && dbiter->Valid(); miter->Next(), dbiter->Next()) {
+	for (miter->SeekToFirst(), dbiter->SeekToFirst(); ok && miter->Valid() && dbiter->Valid();
+		 miter->Next(), dbiter->Next()) {
 		count++;
 		if (miter->key().compare(dbiter->key()) != 0) {
 			std::fprintf(stderr,
@@ -2309,7 +2309,11 @@ void BM_LogAndApply(int iters, int num_base_files) {
 	unsigned int us = stop_micros - start_micros;
 	char buf[16];
 	std::snprintf(buf, sizeof(buf), "%d", num_base_files);
-	std::fprintf(stderr, "BM_LogAndApply/%-6s   %8d iters : %9u us (%7.0f us / iter)\n", buf, iters, us,
+	std::fprintf(stderr,
+				 "BM_LogAndApply/%-6s   %8d iters : %9u us (%7.0f us / iter)\n",
+				 buf,
+				 iters,
+				 us,
 				 ((float) us) / iters);
 }
 

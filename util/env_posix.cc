@@ -151,8 +151,7 @@ class PosixRandomAccessFile final : public RandomAccessFile {
   // instance, and will be used to determine if .
   PosixRandomAccessFile(std::string filename, int fd, Limiter *fd_limiter)
 	  : has_permanent_fd_(fd_limiter->Acquire()),
-		fd_(has_permanent_fd_ ? fd
-							  : -1),
+		fd_(has_permanent_fd_ ? fd : -1),
 		fd_limiter_(fd_limiter),
 		filename_(std::move(filename)) {
 	  if (!has_permanent_fd_) {
@@ -216,8 +215,8 @@ class PosixMmapReadableFile final : public RandomAccessFile {
   // |mmap_limiter| must outlive this instance. The caller must have already
   // aquired the right to use one mmap region, which will be released when this
   // instance is destroyed.
-  PosixMmapReadableFile(std::string filename, char *mmap_base, size_t length, Limiter *mmap_limiter)
-	  : mmap_base_(mmap_base), length_(length), mmap_limiter_(mmap_limiter), filename_(std::move(filename)) {}
+  PosixMmapReadableFile(std::string filename, char *mmap_base, size_t length, Limiter *mmap_limiter) : mmap_base_(
+	  mmap_base), length_(length), mmap_limiter_(mmap_limiter), filename_(std::move(filename)) {}
 
   ~PosixMmapReadableFile() override {
 	  ::munmap(static_cast<void *>(mmap_base_), length_);
@@ -832,8 +831,8 @@ class SingletonEnv {
 	  env_initialized_.store(true, std::memory_order::memory_order_relaxed);
 #endif  // !defined(NDEBUG)
 	  static_assert(sizeof(env_storage_) >= sizeof(EnvType), "env_storage_ will not fit the Env");
-	  static_assert(alignof(decltype(env_storage_)) >=
-		  alignof(EnvType), "env_storage_ does not meet the Env's alignment needs");
+	  static_assert(alignof(decltype(env_storage_)) >= alignof(EnvType),
+					"env_storage_ does not meet the Env's alignment needs");
 	  new(&env_storage_) EnvType();
   }
 

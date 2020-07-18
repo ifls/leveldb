@@ -394,27 +394,18 @@ struct TestArgs {
   int restart_interval;
 };
 
-static const TestArgs kTestArgList[] = {{TABLE_TEST, false, 16},
-										{TABLE_TEST, false, 1},
-										{TABLE_TEST, false, 1024},
-										{TABLE_TEST, true, 16},
-										{TABLE_TEST, true, 1},
-										{TABLE_TEST, true, 1024},
+static const TestArgs kTestArgList[] =
+	{{TABLE_TEST, false, 16}, {TABLE_TEST, false, 1}, {TABLE_TEST, false, 1024}, {TABLE_TEST, true, 16},
+	 {TABLE_TEST, true, 1}, {TABLE_TEST, true, 1024},
 
-										{BLOCK_TEST, false, 16},
-										{BLOCK_TEST, false, 1},
-										{BLOCK_TEST, false, 1024},
-										{BLOCK_TEST, true, 16},
-										{BLOCK_TEST, true, 1},
-										{BLOCK_TEST, true, 1024},
+	 {BLOCK_TEST, false, 16}, {BLOCK_TEST, false, 1}, {BLOCK_TEST, false, 1024}, {BLOCK_TEST, true, 16},
+	 {BLOCK_TEST, true, 1}, {BLOCK_TEST, true, 1024},
 
-	// Restart interval does not matter for memtables
-										{MEMTABLE_TEST, false, 16},
-										{MEMTABLE_TEST, true, 16},
+		// Restart interval does not matter for memtables
+	 {MEMTABLE_TEST, false, 16}, {MEMTABLE_TEST, true, 16},
 
-	// Do not bother with restart interval variations for DB
-										{DB_TEST, false, 16},
-										{DB_TEST, true, 16},};
+		// Do not bother with restart interval variations for DB
+	 {DB_TEST, false, 16}, {DB_TEST, true, 16},};
 static const int kNumTestArgs = sizeof(kTestArgList) / sizeof(kTestArgList[0]);
 
 class Harness : public testing::Test {

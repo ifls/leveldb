@@ -93,8 +93,7 @@ void MemTable::Add(SequenceNumber s, ValueType type, const Slice &key, const Sli
 	size_t key_size = key.size();
 	size_t val_size = value.size();
 	size_t internal_key_size = key_size + 8;
-	const size_t encoded_len =
-		VarintLength(internal_key_size) + internal_key_size + VarintLength(val_size) + val_size;
+	const size_t encoded_len = VarintLength(internal_key_size) + internal_key_size + VarintLength(val_size) + val_size;
 	// 分配内存空间
 	char *buf = arena_.Allocate(encoded_len);
 	//key
@@ -136,8 +135,7 @@ bool MemTable::Get(const LookupKey &key, std::string *value, Status *s) {
 		// 拿到key 的长度, 变长编码, 最长5B
 		const char *key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
 		// 键相等
-		if (comparator_.comparator.user_comparator()->Compare(Slice(key_ptr, key_length - 8), key.user_key()) ==
-			0) {
+		if (comparator_.comparator.user_comparator()->Compare(Slice(key_ptr, key_length - 8), key.user_key()) == 0) {
 			// Correct user key
 			const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
 			//判断tag

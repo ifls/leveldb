@@ -43,8 +43,9 @@ static void TestKey(const std::string &key, uint64_t seq, ValueType vt) {
 
 TEST(FormatTest, InternalKey_EncodeDecode) {
 	const char *keys[] = {"", "k", "hello", "longggggggggggggggggggggg"};
-	const uint64_t seq[] = {1, 2, 3, (1ull << 8) - 1, 1ull << 8, (1ull << 8) + 1, (1ull << 16) - 1, 1ull << 16,
-							(1ull << 16) + 1, (1ull << 32) - 1, 1ull << 32, (1ull << 32) + 1};
+	const uint64_t seq[] =
+		{1, 2, 3, (1ull << 8) - 1, 1ull << 8, (1ull << 8) + 1, (1ull << 16) - 1, 1ull << 16, (1ull << 16) + 1,
+		 (1ull << 32) - 1, 1ull << 32, (1ull << 32) + 1};
 	for (int k = 0; k < sizeof(keys) / sizeof(keys[0]); k++) {
 		for (int s = 0; s < sizeof(seq) / sizeof(seq[0]); s++) {
 			TestKey(keys[k], seq[s], kTypeValue);

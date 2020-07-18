@@ -45,8 +45,8 @@ class WindowsLogger final : public Logger {
 	  // fails, we make a second attempt with a dynamically allocated buffer.
 	  constexpr const int kStackBufferSize = 512;
 	  char stack_buffer[kStackBufferSize];
-	  static_assert(sizeof(stack_buffer) ==
-		  static_cast<size_t>(kStackBufferSize), "sizeof(char) is expected to be 1 in C++");
+	  static_assert(sizeof(stack_buffer) == static_cast<size_t>(kStackBufferSize),
+					"sizeof(char) is expected to be 1 in C++");
 
 	  int dynamic_buffer_size = 0;  // Computed in the first iteration.
 	  for (int iteration = 0; iteration < 2; ++iteration) {
@@ -71,15 +71,14 @@ class WindowsLogger final : public Logger {
 		  // 3 delimiters) plus the thread ID, which should fit comfortably into the
 		  // static buffer.
 		  assert(buffer_offset <= 28 + kMaxThreadIdSize);
-		  static_assert(28 + kMaxThreadIdSize <
-			  kStackBufferSize, "stack-allocated buffer may not fit the message header");
+		  static_assert(28 + kMaxThreadIdSize < kStackBufferSize,
+						"stack-allocated buffer may not fit the message header");
 		  assert(buffer_offset < buffer_size);
 
 		  // Print the message into the buffer.
 		  std::va_list arguments_copy;
 		  va_copy(arguments_copy, arguments);
-		  buffer_offset += std::vsnprintf(
-			  buffer + buffer_offset, buffer_size - buffer_offset, format, arguments_copy);
+		  buffer_offset += std::vsnprintf(buffer + buffer_offset, buffer_size - buffer_offset, format, arguments_copy);
 		  va_end(arguments_copy);
 
 		  // The code below may append a newline at the end of the buffer, which

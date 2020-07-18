@@ -183,8 +183,9 @@ class Benchmark {
 	  std::fprintf(stdout, "Keys:       %d bytes each\n", kKeySize);
 	  std::fprintf(stdout, "Values:     %d bytes each\n", FLAGS_value_size);
 	  std::fprintf(stdout, "Entries:    %d\n", num_);
-	  std::fprintf(stdout, "RawSize:    %.1f MB (estimated)\n", (
-		  (static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
+	  std::fprintf(stdout,
+				   "RawSize:    %.1f MB (estimated)\n",
+				   ((static_cast<int64_t>(kKeySize + FLAGS_value_size) * num_) / 1048576.0));
 	  PrintWarnings();
 	  std::fprintf(stdout, "------------------------------------------------\n");
   }
@@ -293,8 +294,12 @@ class Benchmark {
 		  }
 	  }
 
-	  std::fprintf(stdout, "%-12s : %11.3f micros/op;%s%s\n", name.ToString().c_str(),
-				   (finish - start_) * 1e6 / done_, (message_.empty() ? "" : " "), message_.c_str());
+	  std::fprintf(stdout,
+				   "%-12s : %11.3f micros/op;%s%s\n",
+				   name.ToString().c_str(),
+				   (finish - start_) * 1e6 / done_,
+				   (message_.empty() ? "" : " "),
+				   message_.c_str());
 	  if (FLAGS_histogram) {
 		  std::fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
 	  }
@@ -310,8 +315,12 @@ class Benchmark {
   };
 
   Benchmark()
-	  : db_(nullptr), db_num_(0), num_(FLAGS_num), reads_(
-	  FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads), bytes_(0), rand_(301) {
+	  : db_(nullptr),
+		db_num_(0),
+		num_(FLAGS_num),
+		reads_(FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads),
+		bytes_(0),
+		rand_(301) {
 	  std::vector<std::string> files;
 	  std::string test_dir;
 	  Env::Default()->GetTestDirectory(&test_dir);

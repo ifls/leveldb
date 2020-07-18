@@ -48,8 +48,7 @@ class ErrorEnv : public EnvWrapper {
   bool writable_file_error_;
   int num_writable_file_errors_;
 
-  ErrorEnv()
-	  : EnvWrapper(NewMemEnv(Env::Default())), writable_file_error_(false), num_writable_file_errors_(0) {}
+  ErrorEnv() : EnvWrapper(NewMemEnv(Env::Default())), writable_file_error_(false), num_writable_file_errors_(0) {}
 
   ~ErrorEnv() override { delete target(); }
 

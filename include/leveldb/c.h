@@ -222,8 +222,14 @@ enum {
 
 /* Comparator */
 
-LEVELDB_EXPORT leveldb_comparator_t *leveldb_comparator_create(void *state, void (*destructor)(void *), int (*compare)(
-	void *, const char *a, size_t alen, const char *b, size_t blen), const char *(*name)(void *));
+LEVELDB_EXPORT leveldb_comparator_t *leveldb_comparator_create(void *state,
+															   void (*destructor)(void *),
+															   int (*compare)(void *,
+																			  const char *a,
+																			  size_t alen,
+																			  const char *b,
+																			  size_t blen),
+															   const char *(*name)(void *));
 
 LEVELDB_EXPORT void leveldb_comparator_destroy(leveldb_comparator_t *);
 
